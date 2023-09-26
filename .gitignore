@@ -1,0 +1,14 @@
+/config.py
+__pycache__
+/test_invalid.txt
+/test_visited.txt
+/visited.txt
+/visited_aspects.txt
+.env/*
+venv/*
+*.csv
+testme.py
+*.zip
+chromedriver
+.DS_Store
+usedproducts.xlsx
