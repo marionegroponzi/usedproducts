@@ -13,7 +13,7 @@ def crawl():
     scanner = Scanner()
     # num_pages = scanner.get_num_pages("https://www.usedproducts.nl/page/1/?s&post_type=product&vestiging=0")
     # for page in range(1,num_pages+1):
-    for page in range(1,10):
+    for page in range(1,30):
         scanner.scan(f"https://www.usedproducts.nl/page/{page}/?s&post_type=product&vestiging=0")
     # print(ProductsEncoder().encode(scanner.products))
     scannedProducts = json.dumps(scanner.products, indent=4, cls=ProductsEncoder, ensure_ascii=False)
