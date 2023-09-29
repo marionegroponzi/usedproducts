@@ -6,12 +6,12 @@ class Product(object):
         self.description = description
         self.link = link
         self.price = price
-        self.is_iphone = Product.is_iphone(description)
-        self.is_ipad = Product.is_ipad(description)
-        self.battery_level = Product.battery_level(description)
-        self.model = Product.model_name(description)
-        self.memory = Product.memory(description)
-        self.has_apple_garantie = Product.has_apple_garantie(description)
+        # self.is_iphone = Product.is_iphone(description)
+        # self.is_ipad = Product.is_ipad(description)
+        # self.battery_level = Product.battery_level(description)
+        # self.model = Product.model_name(description)
+        # self.memory = Product.memory(description)
+        # self.has_apple_garantie = Product.has_apple_garantie(description)
 
     def is_iphone(text) -> bool:
         return re.search("iphone", text, flags=re.I) is not None
