@@ -7,6 +7,7 @@ class Product(object):
         self.link = link
         self.price = price
         self.is_iphone = Product.is_iphone(description)
+        self.is_ipad = Product.is_ipad(description)
         self.battery_level = Product.battery_level(description)
         self.model = Product.model_name(description)
         self.memory = Product.memory(description)
@@ -14,6 +15,9 @@ class Product(object):
 
     def is_iphone(text) -> bool:
         return re.search("iphone", text, flags=re.I) is not None
+    
+    def is_ipad(text) -> bool:
+        return re.search("ipad", text, flags=re.I) is not None
     
     def memory(text) -> Optional[str]:
         sizes = []
@@ -27,37 +31,27 @@ class Product(object):
 
     
     def model_name(text) -> Optional[str]:
+        names = []
         models = []
         for i in range (12, 16):
-            name = f"iphone {i} pro max"
-            models.append({'match': name, 'name': name})
-            name = f"iphone {i} pro"
-            models.append({'match': name, 'name': name})
-            name = f"iphone {i} mini"
-            models.append({'match': name, 'name': name})
-            name = f"iphone {i} plus"
-            models.append({'match': name, 'name': name})            
-            name = f"iphone {i}"
-            models.append({'match': name, 'name': name})
+            names.append(f"{i} pro max")
+            names.append(f"{i} pro")
+            names.append(f"{i} mini")
+            names.append(f"{i} plus")
 
-        models.append({'match': "iphone se.*2022", 'name': "iphone se (2022)"})
-        models.append({'match': "iphone se.*2020", 'name': "iphone se (2020)"})
-        name = f"iphone xs max"
-        models.append({'match': name, 'name': name})
-        name = f"iphone xs"
-        models.append({'match': name, 'name': name})
-        name = f"iphone xr"
-        models.append({'match': name, 'name': name})
-        name = f"iphone x"
-        models.append({'match': name, 'name': name})
-        name = f"iphone 8"
-        models.append({'match': name, 'name': name})
-        name = f"iphone 7"
-        models.append({'match': name, 'name': name})
-        name = f"iphone 6s"
-        models.append({'match': name, 'name': name})
-        name = f"iphone 6"
-        models.append({'match': name, 'name': name})
+        names = names + ["xs max", "xs", "xr", "x", "x", "x", "6s", "6"]
+
+        names = names + ["se.*2022", "se.*2020"]
+
+        for name in names:
+            model_name = name.replace("*.", " ")
+            models.append({'match': 'iphone ' + name, 'name': 'iphone ' + model_name})
+
+
+        names = ["pro 12.9", "pro.*2022", "pro.*2018", "pro.*2017", "pro 11", "2021", "2020", "2019", "2018", "mini 6", "mini 5", "mini", "air 2022", "air 10.9", "9e gen", "8e gen", "10th gen", "air 3" "air 2", "air 1", "air", ]
+        for name in names:
+            model_name = name.replace("*.", " ")
+            models.append({'match': 'ipad ' + name, 'name': 'ipad ' + model_name})
 
         for model in models:
             if re.search(model['match'], text, flags=re.I):
