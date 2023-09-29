@@ -10,7 +10,7 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.wait import WebDriverWait
 
-# from selenium.webdriver.common.by import By
+from selenium.webdriver.common.by import By
 # from bs4 import Tag, ResultSet
 
 
@@ -58,6 +58,9 @@ class Scanner(object):
         matches = re.findall('\d+', text)
         num_pages = math.ceil(int(matches[2]) / int(matches[1]))
         return num_pages
+    
+    def accept_cookies(self):
+        self.browser.find_element(By.ID, "allowcookie").click()
     
     def scan(self, uri):
         self.browser.get(uri)
