@@ -7,15 +7,22 @@ class Product(object):
         self.link = link
         self.price = price
         self.is_phone = Product.is_iphone(description)
+        self.model = Product.model_name(description)
 
     def is_iphone(text) -> bool:
         return re.match("iphone", text, flags=re.I) is not None
     
-    def model_name(self) -> Optional[str]:
-        if self.is_iphone():
-            name = re.match("iphone (\w+)", self.description, flags=re.I)
-            if name:
-                return name[0]
+    def model_name(text) -> Optional[str]:
+        models = []
+        for i in range (12, 15):
+            models.append(f"iphone {i} pro max")
+            models.append(f"iphone {i} pro")
+            models.append(f"iphone {i} mini")
+            models.append(f"iphone {i}")
+        for model in models:
+            if re.match(model, text, flags=re.I):
+                return model
+        return ""
     
     def battery_level(self) -> Optional[str]:
         lvl = re.search("accu (\d+)", self.description, flags=re.I)
