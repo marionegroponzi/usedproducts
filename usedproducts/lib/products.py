@@ -38,4 +38,4 @@ class Products(object):
 
 class ProductsEncoder(json.JSONEncoder):
     def default(self, o):
-        return self.products.__dict__
+        return o.__dict__

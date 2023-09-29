@@ -1,15 +1,15 @@
 from typing import Optional
 import re
-import json
 
 class Product(object):
-    def __init__(self) -> None:
-        self.description = ""
-        self.link = ""
-        self.price = ""
+    def __init__(self, description, link, price) -> None:
+        self.description = description
+        self.link = link
+        self.price = price
+        self.is_phone = Product.is_iphone(description)
 
-    def is_iphone(self) -> bool:
-        return re.match("iphone", self.description, flags=re.I) is not None
+    def is_iphone(text) -> bool:
+        return re.match("iphone", text, flags=re.I) is not None
     
     def model_name(self) -> Optional[str]:
         if self.is_iphone():
@@ -31,11 +31,3 @@ class Product(object):
         return self.description
     def __repr__(self):
         return self.description
-    def __dict__(self):
-        return {"description": self.description,
-                "link": self.link,
-                "price": self.price}
-    
-class ProductEncoder(json.JSONEncoder):
-    def default(self, o):
-        return o.__dict__
