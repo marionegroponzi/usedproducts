@@ -68,9 +68,10 @@ class Scanner(object):
         
         product_sections = soup.find_all(class_="product-thumnail")
         for section in product_sections:
-            p = Product()
+            
             anchor = section.find(class_="product-name-collection").a
-            p.description = anchor.text
-            p.link = anchor.get('href')
-            p.price = section.find(class_="product-price").div.span.text
+            description = anchor.text
+            link = anchor.get('href')
+            price = section.find(class_="product-price").div.span.text
+            p = Product(description, link, price)
             self.products.append(p)
