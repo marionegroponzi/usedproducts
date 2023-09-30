@@ -9,17 +9,24 @@ from lib.scanner import Scanner
 from lib.products import ProductsEncoder
 
 def crawl():
-
     scanner = Scanner()
     num_pages = scanner.get_num_pages("https://www.usedproducts.nl/page/1/?s&post_type=product&vestiging=0")
     scanner.accept_cookies()
     # for page in range(1,num_pages+1):
-    for page in range(1,10):
+    for page in range(1,2):
         scanner.scan(f"https://www.usedproducts.nl/page/{page}/?s&post_type=product&vestiging=0")
     # print(ProductsEncoder().encode(scanner.products))
-    scannedProducts = json.dumps(scanner.products, indent=4, cls=ProductsEncoder, ensure_ascii=False)
     scanner.close()
-    return scannedProducts
+    return scanner.products_container
+
+def crawl_details(products):
+    scanner = Scanner()
+    for product in products:
+        details = scanner.scan_details(product.link)
+        product.details = ' '.join(details.split())
+
+    scanner.close()
+
 
 def analyze():
     print('>>>>>>>>>> usedproducts analysis start <<<<<<<<<<')
@@ -32,9 +39,11 @@ def main():
         return
     config_env()
 
-    products = crawl()
+    products_container = crawl()
+    crawl_details(products_container.products)
     if args.save:
-        open(args.save.name, "w").write(products)
+        str_products = json.dumps(products_container.products, indent=4, cls=ProductsEncoder, ensure_ascii=False)
+        open(args.save.name, "w").write(str_products)
 
 def parse_args():
     parser = argparse.ArgumentParser(

@@ -3,7 +3,7 @@ import re
 
 from bs4 import BeautifulSoup
 from lib.product import Product
-from lib.products import Products
+from lib.products import ProductsContainer
 
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -29,7 +29,7 @@ class Scanner(object):
         # options.add_argument('--auth-server-whitelist=*')
         # options.add_argument('--disable-gpu')
         # options.add_argument('--headless')
-        self.products = Products()
+        self.products_container = ProductsContainer()
         service = Service(ChromeDriverManager().install())
         options = webdriver.ChromeOptions()
         options.set_capability('acceptInsecureCerts', True)
@@ -59,6 +59,16 @@ class Scanner(object):
         num_pages = math.ceil(int(matches[2]) / int(matches[1]))
         return num_pages
     
+    def scan_details(self, uri):
+        self.browser.get(uri)
+        wait = WebDriverWait(self.browser, 10)
+        wait.until(PageLoaded())
+        content = self.browser.page_source
+        soup = BeautifulSoup(content, "html.parser")
+
+        id_description = soup.find(id="description")
+        return id_description.text
+    
     def accept_cookies(self):
         self.browser.find_element(By.ID, "allowcookie").click()
     
@@ -77,4 +87,4 @@ class Scanner(object):
             link = anchor.get('href')
             price = section.find(class_="product-price").div.span.text
             p = Product(description, link, price)
-            self.products.append(p)
+            self.products_container.append(p)
