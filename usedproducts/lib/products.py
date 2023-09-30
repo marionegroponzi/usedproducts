@@ -1,7 +1,7 @@
 import openpyxl
 import json
 
-class Products(object):
+class ProductsContainer(object):
     def __init__(self) -> None:
         self.products = []
 
