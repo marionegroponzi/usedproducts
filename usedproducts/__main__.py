@@ -24,10 +24,9 @@ def crawl_details(products):
 
     scanner.close()
 
-def load_parse(filename):
+def load(filename):
     content = open(filename, "r").read()
-    json.loads(content)
-
+    return json.loads(content)
 
 def main():
     (success, args) = parse_args()
@@ -37,13 +36,15 @@ def main():
     config_env()
 
     if args.load:
-        load_parse(args.load)
-
-    products_container = crawl()
-    crawl_details(products_container.products)
-    if args.save:
-        str_products = products_container.to_json()
-        open(args.save.name, "w").write(str_products)
+        products_container = load(args.load.name)
+    else:
+        products_container = crawl()
+        crawl_details(products_container.products)
+        if args.save:
+            str_products = products_container.to_json()
+            open(args.save.name, "w").write(str_products)
+        else:
+            print(str_products)
 
 def parse_args():
     parser = argparse.ArgumentParser(
