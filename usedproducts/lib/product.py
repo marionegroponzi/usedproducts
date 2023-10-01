@@ -6,35 +6,54 @@ class Product(object):
     description: str
     link: str
     price: str
-    details: str
+    details: str = ""
 
-    def clean_details(self):
+    ### derived members
+    clean_details: str = ""
+    is_iphone: bool = False
+    is_ipad: bool = False
+    storage: str = ""
+    model_name: str = ""
+    battery_level: str = ""
+    has_apple_garantie: bool = False
+
+    def fill_derived(self):
+        self.fill_clean_details()
+        self.fill_is_iphone()
+        self.fill_is_ipad()
+        self.fill_storage()
+        self.fill_model_name()
+        self.fill_battery_level()
+        self.fill_has_apple_garantie()
+
+
+    def fill_clean_details(self):
         d = ' '.join(self.description.split())
         d = d.lstrip("Omschrijving ")
         d = re.split("JOUW PRODUCT INRUILEN", d, flags=re.IGNORECASE)[0]
         d = re.split("Te bezichtigen in onze winkel of verzenden", d, flags=re.IGNORECASE)[0]
         d = re.sub("NU TE KOOP BIJ.*:", '', d, flags=re.IGNORECASE)
         d = d.replace('--','').strip()
-        return d
+        self.clean_details = d
 
-    def is_iphone(self) -> bool:
-        return re.search("iphone", self.description, flags=re.I) is not None
+    def fill_is_iphone(self) -> bool:
+        self.is_iphone = re.search("iphone", self.description, flags=re.I) is not None
     
-    def is_ipad(self) -> bool:
-        return re.search("ipad", self.description, flags=re.I) is not None
+    def fill_is_ipad(self) -> bool:
+        self.is_ipad = re.search("ipad", self.description, flags=re.I) is not None
     
-    def memory(self) -> Optional[str]:
+    def fill_storage(self) -> Optional[str]:
         sizes = []
         for size in [64, 128, 256, 512]:
             sizes.append({'match': f"{size}.*gb", 'name': f"{size}gb"})
 
         for size in sizes:
             if re.search(size['match'], self.description, flags=re.I):
-                return size['name']
-        return ""            
+                self.storage = size['name']
+                return
 
     
-    def model_name(self) -> Optional[str]:
+    def fill_model_name(self) -> Optional[str]:
         names = []
         models = []
         for i in range (12, 16):
@@ -59,14 +78,14 @@ class Product(object):
 
         for model in models:
             if re.search(model['match'], self.description, flags=re.I):
-                return model['name']
-        return ""
+                self.model_name = model['name']
+                return
     
-    def battery_level(self) -> Optional[str]:
+    def fill_battery_level(self) -> Optional[str]:
         lvl = re.search("accu (\d+)", self.description, flags=re.I)
         if lvl:
-            return lvl[1]
+            self.battery_level = lvl[1]
     
-    def has_apple_garantie(self) -> bool:
-        return re.search("apple garantie", self.description, flags=re.I) is not None
+    def fill_has_apple_garantie(self) -> bool:
+        self.has_apple_garantie = re.search("apple garantie", self.description, flags=re.I) is not None
     

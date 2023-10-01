@@ -26,5 +26,9 @@ class ProductsContainer(object):
 
         workbook.save("usedproducts.xlsx")
 
+    def fill_derived(self):
+        for product in self.products:
+            product.fill_derived()
+            
     def to_json(self):
         return json.dumps(self, indent = 4, default=lambda o: o.__dict__, ensure_ascii=False)

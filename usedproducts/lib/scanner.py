@@ -85,5 +85,5 @@ class Scanner(object):
             description = anchor.text
             link = anchor.get('href')
             price = section.find(class_="product-price").div.span.text
-            p = Product(description, link, price, details="")
+            p = Product(description, link, price)
             self.products_container.append(p)
