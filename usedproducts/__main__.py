@@ -4,15 +4,15 @@ import json
 import os
 import urllib3
 import logging
+import sys
 
 from lib.scanner import Scanner
 
-def crawl():
+def crawl(max_pages):
     scanner = Scanner()
     num_pages = scanner.get_num_pages("https://www.usedproducts.nl/page/1/?s&post_type=product&vestiging=0")
     scanner.accept_cookies()
-    # for page in range(1,num_pages+1):
-    for page in range(1,2):
+    for page in range(1,min(num_pages, max_pages)+1):
         scanner.scan(f"https://www.usedproducts.nl/page/{page}/?s&post_type=product&vestiging=0")
     scanner.close()
     return scanner.products_container
@@ -38,7 +38,7 @@ def main():
     if args.load:
         products_container = load(args.load.name)
     else:
-        products_container = crawl()
+        products_container = crawl(args.max_pages)
         crawl_details(products_container.products)
         if args.save:
             str_products = products_container.to_json()
@@ -55,6 +55,7 @@ def parse_args():
                         help='loglevel: DEBUG, INFO, WARN, ERROR (default: ERROR)')
     parser.add_argument('--load', '-f', type=argparse.FileType('r'), help='analyze data from a json file')
     parser.add_argument('--save', '-s', type=argparse.FileType('w'), help='save data to a json file')
+    parser.add_argument('--max_pages', '-m', type=int, help='maximum number of pages to load', default=sys.maxsize)
     args = parser.parse_args()
     if args.log:
         numeric_level = getattr(logging, args.log.upper())
