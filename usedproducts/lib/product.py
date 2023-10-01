@@ -1,36 +1,40 @@
 from typing import Optional
 import re
-
+from dataclasses import dataclass
+@dataclass
 class Product(object):
-    def __init__(self, description, link, price) -> None:
-        self.description = description
-        self.link = link
-        self.price = price
-        # self.is_iphone = Product.is_iphone(description)
-        # self.is_ipad = Product.is_ipad(description)
-        # self.battery_level = Product.battery_level(description)
-        # self.model = Product.model_name(description)
-        # self.memory = Product.memory(description)
-        # self.has_apple_garantie = Product.has_apple_garantie(description)
+    description: str
+    link: str
+    price: str
+    details: str
 
-    def is_iphone(text) -> bool:
-        return re.search("iphone", text, flags=re.I) is not None
+    def clean_details(self):
+        d = ' '.join(self.description.split())
+        d = d.lstrip("Omschrijving ")
+        d = re.split("JOUW PRODUCT INRUILEN", d, flags=re.IGNORECASE)[0]
+        d = re.split("Te bezichtigen in onze winkel of verzenden", d, flags=re.IGNORECASE)[0]
+        d = re.sub("NU TE KOOP BIJ.*:", '', d, flags=re.IGNORECASE)
+        d = d.replace('--','').strip()
+        return d
+
+    def is_iphone(self) -> bool:
+        return re.search("iphone", self.description, flags=re.I) is not None
     
-    def is_ipad(text) -> bool:
-        return re.search("ipad", text, flags=re.I) is not None
+    def is_ipad(self) -> bool:
+        return re.search("ipad", self.description, flags=re.I) is not None
     
-    def memory(text) -> Optional[str]:
+    def memory(self) -> Optional[str]:
         sizes = []
         for size in [64, 128, 256, 512]:
             sizes.append({'match': f"{size}.*gb", 'name': f"{size}gb"})
 
         for size in sizes:
-            if re.search(size['match'], text, flags=re.I):
+            if re.search(size['match'], self.description, flags=re.I):
                 return size['name']
         return ""            
 
     
-    def model_name(text) -> Optional[str]:
+    def model_name(self) -> Optional[str]:
         names = []
         models = []
         for i in range (12, 16):
@@ -54,21 +58,15 @@ class Product(object):
             models.append({'match': 'ipad ' + name, 'name': 'ipad ' + model_name})
 
         for model in models:
-            if re.search(model['match'], text, flags=re.I):
+            if re.search(model['match'], self.description, flags=re.I):
                 return model['name']
         return ""
     
-    def battery_level(text) -> Optional[str]:
-        lvl = re.search("accu (\d+)", text, flags=re.I)
+    def battery_level(self) -> Optional[str]:
+        lvl = re.search("accu (\d+)", self.description, flags=re.I)
         if lvl:
             return lvl[1]
     
-    def has_apple_garantie(text) -> bool:
-        return re.search("apple garantie", text, flags=re.I) is not None
+    def has_apple_garantie(self) -> bool:
+        return re.search("apple garantie", self.description, flags=re.I) is not None
     
-    def __str__(self):
-        return self.description
-    def __unicode__(self):
-        return self.description
-    def __repr__(self):
-        return self.description

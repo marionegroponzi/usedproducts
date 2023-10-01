@@ -26,16 +26,5 @@ class ProductsContainer(object):
 
         workbook.save("usedproducts.xlsx")
 
-    def __str__(self):
-        s = ''
-        for product in self.products:
-            s += str(product) +'\n'
-        return s
-    def __unicode__(self):
-        return self.__str__()
-    def __repr__(self):
-        return self.__str__()
-
-class ProductsEncoder(json.JSONEncoder):
-    def default(self, o):
-        return o.__dict__
+    def to_json(self):
+        return json.dumps(self, indent = 4, default=lambda o: o.__dict__, ensure_ascii=False)
