@@ -6,7 +6,6 @@ import urllib3
 import logging
 
 from lib.scanner import Scanner
-from lib.products import ProductsEncoder
 
 def crawl():
     scanner = Scanner()
@@ -15,34 +14,35 @@ def crawl():
     # for page in range(1,num_pages+1):
     for page in range(1,2):
         scanner.scan(f"https://www.usedproducts.nl/page/{page}/?s&post_type=product&vestiging=0")
-    # print(ProductsEncoder().encode(scanner.products))
     scanner.close()
     return scanner.products_container
 
 def crawl_details(products):
     scanner = Scanner()
     for product in products:
-        details = scanner.scan_details(product.link)
-        product.details = ' '.join(details.split())
+        product.details = scanner.scan_details(product.link)
 
     scanner.close()
 
+def load_parse(filename):
+    content = open(filename, "r").read()
+    json.loads(content)
 
-def analyze():
-    print('>>>>>>>>>> usedproducts analysis start <<<<<<<<<<')
-
-    print('>>>>>>>>>> usedproducts analysis stop <<<<<<<<<<')
 
 def main():
     (success, args) = parse_args()
     if not success:
+        print("Something wrong with the arguments")
         return
     config_env()
+
+    if args.load:
+        load_parse(args.load)
 
     products_container = crawl()
     crawl_details(products_container.products)
     if args.save:
-        str_products = json.dumps(products_container.products, indent=4, cls=ProductsEncoder, ensure_ascii=False)
+        str_products = products_container.to_json()
         open(args.save.name, "w").write(str_products)
 
 def parse_args():
