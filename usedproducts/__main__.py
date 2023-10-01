@@ -40,6 +40,7 @@ def main():
     else:
         products_container = crawl(args.max_pages)
         crawl_details(products_container.products)
+        products_container.fill_derived()
         if args.save:
             str_products = products_container.to_json()
             open(args.save.name, "w").write(str_products)
