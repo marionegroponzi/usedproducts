@@ -32,6 +32,7 @@ class Scanner(object):
         self.products_container = ProductsContainer()
         service = Service(ChromeDriverManager().install())
         options = webdriver.ChromeOptions()
+        options.add_argument('--blink-settings=imagesEnabled=false')
         options.set_capability('acceptInsecureCerts', True)
         options.add_argument('--disable-notifications')
 
@@ -67,6 +68,9 @@ class Scanner(object):
         soup = BeautifulSoup(content, "html.parser")
 
         id_description = soup.find(id="description")
+        if not id_description:
+            print(f"Description not found for {uri}")
+            return ""
         return id_description.text
     
     def accept_cookies(self):
