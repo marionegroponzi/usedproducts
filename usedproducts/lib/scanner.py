@@ -35,6 +35,7 @@ class Scanner(object):
         options.add_argument('--blink-settings=imagesEnabled=false')
         options.set_capability('acceptInsecureCerts', True)
         options.add_argument('--disable-notifications')
+        options.add_argument("--headless=new")
 
         self.browser = webdriver.Chrome(service=service, options=options)
         self.browser.set_page_load_timeout(15)
