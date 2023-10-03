@@ -23,9 +23,11 @@ def crawl(max_pages):
     return scanner.products_container
 
 def crawl_details(products):
-    scanner = Scanner()
-    for product in products:
-        print(f"Loading product page {product.link}")
+    for index, product in enumerate(products):
+        print(f"Loading product page {index}: {product.link}")
+        if index % 25 == 0:
+            # reset the scanner every 25 products to keep the browser "fresh"
+            scanner = Scanner()
         product.details = scanner.scan_details(product.link)
 
     scanner.close()
