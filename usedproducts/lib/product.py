@@ -28,12 +28,14 @@ class Product(object):
 
 
     def fill_clean_details(self):
-        d = ' '.join(self.description.split())
-        d = d.lstrip("Omschrijving ")
+        d = re.sub("\n", " ", self.details)
+        d = re.sub('-', ' ', d)
+        d = re.sub("\s+", " ", d)
+        d = re.sub("Omschrijving ", "", d, flags=re.IGNORECASE)
         d = re.split("JOUW PRODUCT INRUILEN", d, flags=re.IGNORECASE)[0]
         d = re.split("Te bezichtigen in onze winkel of verzenden", d, flags=re.IGNORECASE)[0]
         d = re.sub("NU TE KOOP BIJ.*:", '', d, flags=re.IGNORECASE)
-        d = d.replace('--','').strip()
+        
         self.clean_details = d
 
     def fill_is_iphone(self) -> bool:
