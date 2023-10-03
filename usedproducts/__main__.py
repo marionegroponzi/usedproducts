@@ -7,6 +7,7 @@ import logging
 import sys
 
 from lib.scanner import Scanner
+from lib.products import ProductsContainer
 
 def crawl(max_pages):
     scanner = Scanner()
@@ -24,9 +25,10 @@ def crawl_details(products):
 
     scanner.close()
 
-def load(filename):
+def load(filename) -> ProductsContainer:
     content = open(filename, "r").read()
-    return json.loads(content)
+    d = json.loads(content)
+    return ProductsContainer(d)
 
 def main():
     (success, args) = parse_args()
@@ -35,17 +37,20 @@ def main():
         return
     config_env()
 
+    # if loading a file we assum one wants to add all derived data
+    # else we assume one want to store just the basics
     if args.load:
         products_container = load(args.load.name)
+        products_container.fill_derived()
     else:
         products_container = crawl(args.max_pages)
         crawl_details(products_container.products)
-        products_container.fill_derived()
-        if args.save:
-            str_products = products_container.to_json()
-            open(args.save.name, "w").write(str_products)
-        else:
-            print(str_products)
+        
+    if args.save:
+        str_products = products_container.to_json()
+        open(args.save.name, "w").write(str_products)
+    else:
+        print(str_products)
 
 def parse_args():
     parser = argparse.ArgumentParser(
