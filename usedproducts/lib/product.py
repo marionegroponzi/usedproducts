@@ -36,7 +36,7 @@ class Product(object):
         d = re.split("Te bezichtigen in onze winkel of verzenden", d, flags=re.IGNORECASE)[0]
         d = re.sub("NU TE KOOP BIJ.*:", '', d, flags=re.IGNORECASE)
         
-        self.clean_details = d
+        self.clean_details = d.strip()
 
     def fill_is_iphone(self) -> bool:
         self.is_iphone = re.search("iphone", self.description, flags=re.I) is not None
@@ -84,9 +84,13 @@ class Product(object):
                 return
     
     def fill_battery_level(self) -> Optional[str]:
-        lvl = re.search("accu (\d+)", self.description, flags=re.I)
+        lvl = re.search(" (\d+)%", self.description, flags=re.I)
         if lvl:
             self.battery_level = lvl[1]
+        else:
+            lvl = re.search(" (\d+)%", self.details, flags=re.I)
+            if lvl:
+                self.battery_level = lvl[1]
     
     def fill_has_apple_garantie(self) -> bool:
         self.has_apple_garantie = re.search("apple garantie", self.description, flags=re.I) is not None
