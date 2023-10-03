@@ -38,7 +38,7 @@ class Scanner(object):
         options.add_argument("--headless=new")
 
         self.browser = webdriver.Chrome(service=service, options=options)
-        self.browser.set_page_load_timeout(15)
+        self.browser.set_page_load_timeout(30)
 
     def __del__(self):
         if hasattr(self, 'browser') and self.browser is not None:
