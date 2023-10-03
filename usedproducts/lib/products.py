@@ -1,9 +1,15 @@
 import openpyxl
 import json
 
+from lib.product import Product
+
 class ProductsContainer(object):
-    def __init__(self) -> None:
+    def __init__(self, dict = None) -> None:
         self.products = []
+        if dict:
+            for product_dict in dict["products"]:
+                p = Product(**product_dict)
+                self.products.append(p)
 
     def append(self, product):
         self.products.append(product)
