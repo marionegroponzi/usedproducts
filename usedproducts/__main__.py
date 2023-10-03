@@ -8,19 +8,24 @@ import sys
 
 from lib.scanner import Scanner
 from lib.products import ProductsContainer
+# enable only after pip install -U memory_profiler
+# from memory_profiler import profile
 
 def crawl(max_pages):
     scanner = Scanner()
     num_pages = scanner.get_num_pages("https://www.usedproducts.nl/page/1/?s&post_type=product&vestiging=0")
     scanner.accept_cookies()
-    for page in range(1,min(num_pages, max_pages)+1):
-        scanner.scan(f"https://www.usedproducts.nl/page/{page}/?s&post_type=product&vestiging=0")
+    for i in range(1,min(num_pages, max_pages)+1):
+        page_uri = f"https://www.usedproducts.nl/page/{i}/?s&post_type=product&vestiging=0"
+        print(f"Loading summary page {i}: {page_uri}")
+        scanner.scan(page_uri)
     scanner.close()
     return scanner.products_container
 
 def crawl_details(products):
     scanner = Scanner()
     for product in products:
+        print(f"Loading product page {product.link}")
         product.details = scanner.scan_details(product.link)
 
     scanner.close()
@@ -30,6 +35,7 @@ def load(filename) -> ProductsContainer:
     d = json.loads(content)
     return ProductsContainer(d)
 
+# @profile
 def main():
     (success, args) = parse_args()
     if not success:

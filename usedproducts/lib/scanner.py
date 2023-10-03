@@ -69,7 +69,7 @@ class Scanner(object):
 
         id_description = soup.find(id="description")
         if not id_description:
-            print(f"Description not found for {uri}")
+            print(f"Product details not found for {uri}")
             return ""
         return id_description.text
     
