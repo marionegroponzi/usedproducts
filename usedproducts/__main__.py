@@ -26,11 +26,6 @@ def crawl_details(product: Product, scanner: Scanner):
     product.fill_derived()
     return product
 
-def load(filename) -> ProductsContainer:
-    content = open(filename, "r").read()
-    d = json.loads(content)
-    return ProductsContainer(d)
-
 def save_to_mongo(product, collection):
     if collection is not None:
         # pay attention that inserting the product modifies it. If you need to return it, copy the dict first

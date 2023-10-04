@@ -103,10 +103,17 @@ products_col = myclient.usedproducts.products
 # mycall(echoplus)
 
 
-def callme():
-    for i in range(10):
-        yield i
+# def callme():
+#     for i in range(10):
+#         yield i
 
 
-for i in callme():
-    print(i)
+# for i in callme():
+#     print(i)
+
+# s="12.45"
+# print(float(s))
+
+import re
+s = "11."
+print(float(s))

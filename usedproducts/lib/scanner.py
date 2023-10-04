@@ -87,6 +87,6 @@ class Scanner(object):
             anchor = section.find(class_="product-name-collection").a
             description = anchor.text
             link = anchor.get('href')
-            price = section.find(class_="product-price").div.span.text
-            p = Product(description, link, price)
+            price_str = section.find(class_="product-price").div.span.text
+            p = Product(description, link, price_str)
             yield p
