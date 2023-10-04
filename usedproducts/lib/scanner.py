@@ -29,7 +29,6 @@ class Scanner(object):
         # options.add_argument('--auth-server-whitelist=*')
         # options.add_argument('--disable-gpu')
         # options.add_argument('--headless')
-        self.products_container = ProductsContainer()
         service = Service(ChromeDriverManager().install())
         options = webdriver.ChromeOptions()
         options.add_argument('--blink-settings=imagesEnabled=false')
@@ -91,4 +90,4 @@ class Scanner(object):
             link = anchor.get('href')
             price = section.find(class_="product-price").div.span.text
             p = Product(description, link, price)
-            self.products_container.append(p)
+            yield p
