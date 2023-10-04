@@ -8,7 +8,6 @@ import sys
 import pymongo
 
 from lib.scanner import Scanner
-from lib.products import ProductsContainer
 from lib.product import Product
 
 # enable only after pip install -U memory_profiler

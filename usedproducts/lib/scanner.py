@@ -3,7 +3,6 @@ import re
 
 from bs4 import BeautifulSoup
 from lib.product import Product
-from lib.products import ProductsContainer
 
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
