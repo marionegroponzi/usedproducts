@@ -5,9 +5,12 @@ import os
 import urllib3
 import logging
 import sys
+import pymongo
 
 from lib.scanner import Scanner
 from lib.products import ProductsContainer
+from lib.product import Product
+
 # enable only after pip install -U memory_profiler
 # from memory_profiler import profile
 
@@ -22,13 +25,17 @@ def crawl(max_pages):
     scanner.close()
     return scanner.products_container
 
-def crawl_details(products):
+def crawl_details(products: [Product], coll: pymongo.collection.Collection):
+    scanner = Scanner()
     for index, product in enumerate(products):
         print(f"Loading product page {index}: {product.link}")
-        if index % 25 == 0:
-            # reset the scanner every 25 products to keep the browser "fresh"
-            scanner = Scanner()
         product.details = scanner.scan_details(product.link)
+        product.fill_derived()
+        if coll is not None:
+            # after inserting in mongodb the object has one more field (_id) that
+            # does not play well with the json serialization
+            d = product.__dict__.copy()
+            coll.insert_one(d)
 
     scanner.close()
 
@@ -45,18 +52,23 @@ def main():
         return
     config_env()
 
-    # if load we assume one wants to refresh all derived data
+    coll = None
+    if args.mongo:
+        client = pymongo.MongoClient("mongodb://localhost:27017/")
+        coll = client.usedproducts.products
+        coll.delete_many({ })
+
+    # if 'refresh' we assume one wants to refresh all derived data
     # else we assume one wants to store them
     if args.refresh:
         products_container = load(args.load.name)
+        products_container.fill_derived()
     else:
         products_container = crawl(args.max_pages)
-        crawl_details(products_container.products)
-
-    products_container.fill_derived()
-        
+        crawl_details(products_container.products, coll)
+    
+    str_products = products_container.to_json()
     if args.save:
-        str_products = products_container.to_json()
         open(args.save.name, "w").write(str_products)
     else:
         print(str_products)
@@ -70,7 +82,8 @@ def parse_args():
                         help='loglevel: DEBUG, INFO, WARN, ERROR (default: ERROR)')
     parser.add_argument('--refresh', '-f', type=argparse.FileType('r'), help='load a json file instead of crawling and update the details for each product')
     parser.add_argument('--save', '-s', type=argparse.FileType('w'), help='save data to a json file')
-    parser.add_argument('--max_pages', '-m', type=int, help='maximum number of pages to load', default=sys.maxsize)
+    parser.add_argument('--max_pages', '-p', type=int, help='maximum number of pages to load', default=sys.maxsize)
+    parser.add_argument('--mongo', '-m', action='store_true')
     args = parser.parse_args()
     if args.log:
         numeric_level = getattr(logging, args.log.upper())
