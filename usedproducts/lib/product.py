@@ -1,6 +1,8 @@
+import json
 from typing import Optional
 import re
 from dataclasses import dataclass
+
 @dataclass
 class Product(object):
     description: str
@@ -94,4 +96,7 @@ class Product(object):
     
     def fill_has_apple_garantie(self) -> bool:
         self.has_apple_garantie = re.search("apple garantie", self.description, flags=re.I) is not None
+
+    def to_json(self):
+        return json.dumps(self, indent = 4, default=lambda o: o.__dict__, ensure_ascii=False)
     
