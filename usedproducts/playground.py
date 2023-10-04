@@ -75,16 +75,16 @@ products_col = myclient.usedproducts.products
 # x = products_col.insert_one(mydict)
 # print(mydict)
 
-class Test:
-    def __init__(self):
-        self.name = "name"
-        self.surname = "surname"
+# class Test:
+#     def __init__(self):
+#         self.name = "name"
+#         self.surname = "surname"
 
-t = Test()
-d = t.__dict__
-print(d)
-x = products_col.insert_one(d.copy())
-print(t.__dict__)
+# t = Test()
+# d = t.__dict__
+# print(d)
+# x = products_col.insert_one(d.copy())
+# print(t.__dict__)
 
 ####
 # from typing import Callable
@@ -101,3 +101,12 @@ print(t.__dict__)
 
 # mycall(echo)
 # mycall(echoplus)
+
+
+def callme():
+    for i in range(10):
+        yield i
+
+
+for i in callme():
+    print(i)
