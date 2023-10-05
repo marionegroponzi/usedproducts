@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import argparse
 import json
+from multiprocessing import Process
 import os
 import urllib3
 import logging
@@ -18,19 +19,22 @@ def crawl(num_pages, scanner: Scanner):
         page_uri = f"https://www.usedproducts.nl/page/{i}/?s&post_type=product&vestiging=0"
         print(f"Loading summary page {i}: {page_uri}")
         try:
-            for product in scanner.scan(page_uri):
-                yield product
+            plist = scanner.scan(page_uri)
+            yield plist
         except:
             print(f"### Error: Failed loading summary page {i}: {page_uri}")
 
-def crawl_details(product: Product, scanner: Scanner):
+def crawl_details(product: Product):
+    scanner = Scanner()
     print(f"Loading product page: {product.link}")
     try:
         product.desc, product.short_desc = scanner.scan_details(product.link)
         product.fill_derived()
+        save_to_mongo(product, collection=get_mongo())
     except:
         print(f"### Error: Failed loading product {product.link}")
-    return product
+    
+    # return product
 
 def save_to_mongo(product, collection):
     if collection is not None:
@@ -48,6 +52,10 @@ def get_num_pages(args, scanner: Scanner):
     scanner.accept_cookies()
     return min(num_pages, args.max_pages)
 
+
+def echo(i):
+    print(i)
+
 # @profile
 def main():
     (success, args) = parse_args()
@@ -56,7 +64,7 @@ def main():
         return -1
     config_env()
 
-    coll = get_mongo(args.reset)
+    coll = get_mongo()
 
     if args.empty:
         coll.delete_many({ })
@@ -65,10 +73,12 @@ def main():
         main_scanner = Scanner()
         num_pages = get_num_pages(args, scanner=main_scanner)
 
-        details_scanner = Scanner()
-        for product in crawl(num_pages, scanner=main_scanner):
-            product = crawl_details(product=product, scanner=details_scanner)
-            save_to_mongo(product=product, collection=coll)
+        for products_list in crawl(num_pages, scanner=main_scanner):
+            processes = [Process(target=crawl_details, args=(products_list[i],)) for i in range(len(products_list))]
+            for process in processes:
+                process.start()
+            for process in processes:
+                process.join()
 
     else: 
         if args.refresh:

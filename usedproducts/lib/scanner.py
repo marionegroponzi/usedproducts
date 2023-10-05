@@ -89,10 +89,13 @@ class Scanner(object):
         soup = BeautifulSoup(content, "html.parser")
         
         product_sections = soup.find_all(class_="product-thumnail")
+        plist=[]
         for section in product_sections:
             anchor = section.find(class_="product-name-collection").a
             name = anchor.text
             link = anchor.get('href')
             price_str = section.find(class_="product-price").div.span.text
             p = Product(name, link, price_str)
-            yield p
+            # yield p
+            plist.append(p)
+        return plist
