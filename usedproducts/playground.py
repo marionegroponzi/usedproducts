@@ -55,9 +55,12 @@
 
 #### mongo db
 import pymongo
-myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+client = pymongo.MongoClient("mongodb://localhost:27017/")
 
-products_col = myclient.usedproducts.products
+coll = client.usedproducts.products
+for product in coll.find().limit(500):
+    print(product["_id"])
+
 # print(type(products_col))
 
 # mydb = myclient["usedproducts"]
@@ -114,6 +117,6 @@ products_col = myclient.usedproducts.products
 # s="12.45"
 # print(float(s))
 
-import re
-s = "11."
-print(float(s))
+# import re
+# s = "11."
+# print(float(s))
