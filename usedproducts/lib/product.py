@@ -98,11 +98,11 @@ class Product(object):
     
     def fill_battery_level(self) -> Optional[str]:
         self.battery_level = -1
-        lvl = re.search("[ |:](\d+)%", self.name, flags=re.I) or re.search(" (\d+) procent", self.name, flags=re.I)
+        lvl = re.search("[ |:](\d+)%", self.name, flags=re.I) or re.search("[ |:](\d+) procent", self.name, flags=re.I)
         if lvl:
             self.battery_level = int(lvl[1])
-        else:
-            lvl = re.search(" (\d+)%", self.desc, flags=re.I) or re.search(" (\d+) procent", self.desc, flags=re.I)
+        if self.battery_level == -1:
+            lvl = re.search("[ |:](\d+)%", self.desc, flags=re.I) or re.search("[ |:](\d+) procent", self.desc, flags=re.I)
             if lvl:
                 self.battery_level = int(lvl[1])
         if self.battery_level == -1:
