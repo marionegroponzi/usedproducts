@@ -67,15 +67,15 @@ class Scanner(object):
         soup = BeautifulSoup(content, "html.parser")
 
         desc = soup.find(id="description")
-        if not desc: print(f"Product description not found for {uri}")
+        if not desc: print(f"### Warning: Product description not found for {uri}")
         short_desc = soup.find(class_="short-desc")
-        if not short_desc: print(f"Product short-desc not found for {uri}")
+        if not short_desc: print(f"### Warning: Product short-desc not found for {uri}")
         desc = desc.text if desc else ""
         short_desc = short_desc.text if short_desc else ""
 
-        desc = re.sub("\s+", " ", desc)
-        short_desc = re.sub("\s+", " ", short_desc)
-        
+        desc = re.sub("\s+", " ", desc).strip()
+        short_desc = re.sub("\s+", " ", short_desc).strip()
+
         return (desc, short_desc)
     
     def accept_cookies(self):
