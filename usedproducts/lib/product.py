@@ -5,18 +5,19 @@ from dataclasses import dataclass
 
 @dataclass
 class Product(object):
-    description: str
+    name: str
     link: str
     price_str: str
-    details: str = ""
+    desc: str = ""
+    short_desc: str = ""
 
     ### derived members
-    clean_details: str = ""
+    clean_desc: str = ""
     is_iphone: bool = False
     is_ipad: bool = False
     storage: str = ""
     model_name: str = ""
-    battery_level: str = ""
+    battery_level: int = -1
     has_apple_garantie: bool = False
     price_num: float = 0.0
 
@@ -39,7 +40,7 @@ class Product(object):
         self.price_num = float(price)
 
     def fill_clean_details(self):
-        d = re.sub("\n", " ", self.details)
+        d = re.sub("\n", " ", self.desc)
         d = re.sub('-', ' ', d)
         d = re.sub("\s+", " ", d)
         d = re.sub("Omschrijving ", "", d, flags=re.IGNORECASE)
@@ -47,13 +48,13 @@ class Product(object):
         d = re.split("Te bezichtigen in onze winkel of verzenden", d, flags=re.IGNORECASE)[0]
         d = re.sub("NU TE KOOP BIJ.*:", '', d, flags=re.IGNORECASE)
         
-        self.clean_details = d.strip()
+        self.clean_desc = d.strip()
 
     def fill_is_iphone(self) -> bool:
-        self.is_iphone = re.search("iphone", self.description, flags=re.I) is not None
+        self.is_iphone = re.search("iphone", self.name, flags=re.I) is not None
     
     def fill_is_ipad(self) -> bool:
-        self.is_ipad = re.search("ipad", self.description, flags=re.I) is not None
+        self.is_ipad = re.search("ipad", self.name, flags=re.I) is not None
     
     def fill_storage(self) -> Optional[str]:
         sizes = []
@@ -61,7 +62,7 @@ class Product(object):
             sizes.append({'match': f"{size}.*gb", 'name': f"{size}gb"})
 
         for size in sizes:
-            if re.search(size['match'], self.description, flags=re.I):
+            if re.search(size['match'], self.name, flags=re.I):
                 self.storage = size['name']
                 return
 
@@ -91,21 +92,22 @@ class Product(object):
             models.append({'match': 'ipad ' + name, 'name': 'ipad ' + model_name})
 
         for model in models:
-            if re.search(model['match'], self.description, flags=re.I):
+            if re.search(model['match'], self.name, flags=re.I):
                 self.model_name = model['name']
                 return
     
     def fill_battery_level(self) -> Optional[str]:
-        lvl = re.search(" (\d+)%", self.description, flags=re.I)
+        self.battery_level = -1
+        lvl = re.search(" (\d+)%", self.name, flags=re.I)
         if lvl:
-            self.battery_level = lvl[1]
+            self.battery_level = int(lvl[1])
         else:
-            lvl = re.search(" (\d+)%", self.details, flags=re.I)
+            lvl = re.search(" (\d+)%", self.desc, flags=re.I)
             if lvl:
-                self.battery_level = lvl[1]
+                self.battery_level = int(lvl[1])
     
     def fill_has_apple_garantie(self) -> bool:
-        self.has_apple_garantie = re.search("apple garantie", self.description, flags=re.I) is not None
+        self.has_apple_garantie = re.search("apple garantie", self.name, flags=re.I) is not None
 
     def to_json(self):
         return json.dumps(self, indent = 4, default=lambda o: o.__dict__, ensure_ascii=False)

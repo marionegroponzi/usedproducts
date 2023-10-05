@@ -22,7 +22,7 @@ def crawl(num_pages, scanner: Scanner):
 
 def crawl_details(product: Product, scanner: Scanner):
     print(f"Loading product page: {product.link}")
-    product.details = scanner.scan_details(product.link)
+    product.desc, product.short_desc = scanner.scan_details(product.link)
     product.fill_derived()
     return product
 

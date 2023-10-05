@@ -66,11 +66,13 @@ class Scanner(object):
         content = self.browser.page_source
         soup = BeautifulSoup(content, "html.parser")
 
-        id_description = soup.find(id="description")
-        if not id_description:
-            print(f"Product details not found for {uri}")
-            return ""
-        return id_description.text
+        desc = soup.find(id="description")
+        if not desc: print(f"Product description not found for {uri}")
+        short_desc = soup.find(class_="short-desc")
+        if not short_desc: print(f"Product short-desc not found for {uri}")
+        desc = desc.text if desc else ""
+        short_desc = short_desc.text if short_desc else ""
+        return (desc, short_desc)
     
     def accept_cookies(self):
         self.browser.find_element(By.ID, "allowcookie").click()
@@ -85,8 +87,8 @@ class Scanner(object):
         product_sections = soup.find_all(class_="product-thumnail")
         for section in product_sections:
             anchor = section.find(class_="product-name-collection").a
-            description = anchor.text
+            name = anchor.text
             link = anchor.get('href')
             price_str = section.find(class_="product-price").div.span.text
-            p = Product(description, link, price_str)
+            p = Product(name, link, price_str)
             yield p
