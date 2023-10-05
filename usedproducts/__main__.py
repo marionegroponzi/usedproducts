@@ -17,13 +17,19 @@ def crawl(num_pages, scanner: Scanner):
     for i in range(1, num_pages + 1):
         page_uri = f"https://www.usedproducts.nl/page/{i}/?s&post_type=product&vestiging=0"
         print(f"Loading summary page {i}: {page_uri}")
-        for product in scanner.scan(page_uri):
-            yield product
+        try:
+            for product in scanner.scan(page_uri):
+                yield product
+        except:
+            print(f"### Error: Failed loading summary page {i}: {page_uri}")
 
 def crawl_details(product: Product, scanner: Scanner):
     print(f"Loading product page: {product.link}")
-    product.desc, product.short_desc = scanner.scan_details(product.link)
-    product.fill_derived()
+    try:
+        product.desc, product.short_desc = scanner.scan_details(product.link)
+        product.fill_derived()
+    except:
+        print(f"### Error: Failed loading product {product.link}")
     return product
 
 def save_to_mongo(product, collection):
