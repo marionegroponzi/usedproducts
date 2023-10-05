@@ -2,6 +2,7 @@
 import argparse
 import json
 from multiprocessing import Process
+import multiprocessing
 import os
 import urllib3
 import logging
@@ -24,13 +25,13 @@ def crawl(num_pages, scanner: Scanner):
         except:
             print(f"### Error: Failed loading summary page {i}: {page_uri}")
 
-def crawl_details(product: Product):
+def crawl_details(product: Product, q: multiprocessing.Queue):
     scanner = Scanner()
     print(f"Loading product page: {product.link}")
     try:
         product.desc, product.short_desc = scanner.scan_details(product.link)
         product.fill_derived()
-        save_to_mongo(product, collection=get_mongo())
+        q.put(product)
     except:
         print(f"### Error: Failed loading product {product.link}")
     
@@ -52,10 +53,6 @@ def get_num_pages(args, scanner: Scanner):
     scanner.accept_cookies()
     return min(num_pages, args.max_pages)
 
-
-def echo(i):
-    print(i)
-
 # @profile
 def main():
     (success, args) = parse_args()
@@ -73,13 +70,15 @@ def main():
         main_scanner = Scanner()
         num_pages = get_num_pages(args, scanner=main_scanner)
 
-        for products_list in crawl(num_pages, scanner=main_scanner):
-            processes = [Process(target=crawl_details, args=(products_list[i],)) for i in range(len(products_list))]
+        for products_page in crawl(num_pages, scanner=main_scanner):
+            ctx = multiprocessing.get_context('spawn')
+            q = ctx.Queue()
+            processes = [Process(target=crawl_details, args=(products_page[i],q,)) for i in range(len(products_page))]
             for process in processes:
                 process.start()
+            for _ in range(len(products_page)): save_to_mongo(q.get(), coll) 
             for process in processes:
                 process.join()
-
     else: 
         if args.refresh:
             for mongo_product in coll.find():
