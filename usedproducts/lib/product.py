@@ -98,7 +98,7 @@ class Product(object):
     
     def fill_battery_level(self) -> Optional[str]:
         self.battery_level = -1
-        lvl = re.search(" (\d+)%", self.name, flags=re.I) or re.search(" (\d+) procent", self.name, flags=re.I)
+        lvl = re.search("[ |:](\d+)%", self.name, flags=re.I) or re.search(" (\d+) procent", self.name, flags=re.I)
         if lvl:
             self.battery_level = int(lvl[1])
         else:
