@@ -72,6 +72,10 @@ class Scanner(object):
         if not short_desc: print(f"Product short-desc not found for {uri}")
         desc = desc.text if desc else ""
         short_desc = short_desc.text if short_desc else ""
+
+        desc = re.sub("\s+", " ", desc)
+        short_desc = re.sub("\s+", " ", short_desc)
+        
         return (desc, short_desc)
     
     def accept_cookies(self):
