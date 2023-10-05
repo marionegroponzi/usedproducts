@@ -8,7 +8,7 @@ import sys
 import pymongo
 
 from lib.scanner import Scanner
-from lib.product import Product
+from lib.product import Product, productFromMongo
 
 # enable only after pip install -U memory_profiler
 # from memory_profiler import profile
@@ -38,11 +38,9 @@ def save_to_mongo(product, collection):
         d = product.__dict__
         collection.insert_one(d)
 
-def get_mongo(reset: bool) -> pymongo.collection.Collection:
+def get_mongo() -> pymongo.collection.Collection:
     client = pymongo.MongoClient("mongodb://localhost:27017/")
     coll = client.usedproducts.products
-    if reset:
-        coll.delete_many({ })
     return coll
 
 def get_num_pages(args, scanner: Scanner):
@@ -60,14 +58,26 @@ def main():
 
     coll = get_mongo(args.reset)
 
-    if args.crawl or args.reset:
+    if args.empty:
+        coll.delete_many({ })
+
+    if args.crawl or args.empty:
         main_scanner = Scanner()
         num_pages = get_num_pages(args, scanner=main_scanner)
 
         details_scanner = Scanner()
         for product in crawl(num_pages, scanner=main_scanner):
-            product = crawl_details(product = product, scanner = details_scanner)
+            product = crawl_details(product=product, scanner=details_scanner)
             save_to_mongo(product=product, collection=coll)
+
+    else: 
+        if args.refresh:
+            for mongo_product in coll.find():
+                filter = { 'id': mongo_product._id }
+                product = productFromMongo(mongo_product)
+                product.fill_derived()
+                coll.update_one(filter, product.__dict__)
+
 
 
 def parse_args():
@@ -79,8 +89,9 @@ def parse_args():
                         help='loglevel: DEBUG, INFO, WARN, ERROR (default: ERROR)')
 
     parser.add_argument('--max_pages', '-p', type=int, help='maximum number of pages to load', default=sys.maxsize)
-    parser.add_argument('--reset', '-r', action='store_true', help='reset the database before crawling, implies --crawl')
+    parser.add_argument('--empty', '-e', action='store_true', help='empty the database before crawling, implies --crawl')
     parser.add_argument('--crawl', '-c', action='store_true', help='crawl the web')
+    parser.add_argument('--refresh', '-r', action='store_true', help='refresh the database without crawling')
     args = parser.parse_args()
     if args.log:
         numeric_level = getattr(logging, args.log.upper())
