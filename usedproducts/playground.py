@@ -54,12 +54,12 @@
 
 
 #### mongo db
-import pymongo
-client = pymongo.MongoClient("mongodb://localhost:27017/")
+# import pymongo
+# client = pymongo.MongoClient("mongodb://localhost:27017/")
 
-coll = client.usedproducts.products
-for product in coll.find().limit(500):
-    print(product["_id"])
+# coll = client.usedproducts.products
+# for product in coll.find().limit(500):
+#     print(product["_id"])
 
 # print(type(products_col))
 
@@ -121,3 +121,21 @@ for product in coll.find().limit(500):
 # s = "11."
 # print(float(s))
 
+from multiprocessing import Process
+
+class MyInt:
+    def __init__(self, i):
+        self.value = i
+
+def f(x: MyInt,y: MyInt):
+    print (x.value+y.value)
+
+if __name__ == '__main__':
+    ps = [Process(target=f, args=(MyInt(i),MyInt(i*i))) for i in range(10)]
+    for p in ps:
+        p.start()
+    for p in ps:
+        p.join()
+
+    # with Pool(5) as p:
+    #     print(list(p.map(lambda x, y: x + y, [1,2,3], [4,5,6])))
