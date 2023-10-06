@@ -20,22 +20,40 @@ def crawl(num_pages, scanner: Scanner):
         page_uri = f"https://www.usedproducts.nl/page/{i}/?s&post_type=product&vestiging=0"
         print(f"Loading summary page {i}: {page_uri}")
         try:
-            plist = scanner.scan(page_uri)
-            yield plist
+            for product in scanner.scan(page_uri):
+                yield product
         except:
             print(f"### Error: Failed loading summary page {i}: {page_uri}")
 
-def crawl_details(product: Product, q: multiprocessing.Queue):
+def crawl_details(q_incoming: multiprocessing.Queue, q_outgoing: multiprocessing.Queue):
     scanner = Scanner()
-    print(f"Loading product page: {product.link}")
-    try:
-        product.desc, product.short_desc = scanner.scan_details(product.link)
-        product.fill_derived()
-        q.put(product)
-    except:
-        print(f"### Error: Failed loading product {product.link}")
+    while(True):
+        incoming = q_incoming.get()
+        if type(incoming) is Product:
+            product = incoming
+            print(f"Loading product: {product.name}")
+            try:
+                product.desc, product.short_desc = scanner.scan_details(product.link)
+                product.fill_derived()
+                q_outgoing.put(product)
+            except:
+                print(f"### Error: Failed loading product {product.name}")
+        if type(incoming) is str:
+            print("Exiting crawler process")
+            return
     
     # return product
+
+def save_product(q_incoming: multiprocessing.Queue):
+    coll = get_mongo()
+    while(True):
+        incoming = q_incoming.get()
+        if type(incoming) is Product:
+            print(f"Saving product {incoming.name}")
+            save_to_mongo(incoming, coll)
+        if type(incoming) is str:
+            print("Exiting save process")
+            return
 
 def save_to_mongo(product, collection):
     if collection is not None:
@@ -70,15 +88,28 @@ def main():
         main_scanner = Scanner()
         num_pages = get_num_pages(args, scanner=main_scanner)
 
-        for products_page in crawl(num_pages, scanner=main_scanner):
-            ctx = multiprocessing.get_context('spawn')
-            q = ctx.Queue()
-            processes = [Process(target=crawl_details, args=(products_page[i],q,)) for i in range(len(products_page))]
-            for process in processes:
-                process.start()
-            for _ in range(len(products_page)): save_to_mongo(q.get(), coll) 
-            for process in processes:
-                process.join()
+        ctx = multiprocessing.get_context('spawn')
+        q_crawl = ctx.Queue()
+        q_save = ctx.Queue()
+        save_process = Process(target=save_product, args=(q_save,))
+        save_process.start()
+        processes = [Process(target=crawl_details, args=(q_crawl,q_save,)) for i in range(12)]
+        for process in processes:
+            process.start()
+
+
+        count = 0
+        for product in crawl(num_pages, scanner=main_scanner):
+            print(f"Putting product: {product.name}")
+            count += 1
+            q_crawl.put(product)
+
+        for process in processes:
+            q_crawl.put("finish")
+        for process in processes:
+            process.join()
+        q_save.put("finish")
+        save_process.join()
     else: 
         if args.refresh:
             for mongo_product in coll.find():

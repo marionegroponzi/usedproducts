@@ -67,9 +67,9 @@ class Scanner(object):
         soup = BeautifulSoup(content, "html.parser")
 
         desc = soup.find(id="description")
-        if not desc: print(f"### Warning: Product description not found for {uri}")
+        # if not desc: print(f"### Warning: Product description not found for {uri}")
         short_desc = soup.find(class_="short-desc")
-        if not short_desc: print(f"### Warning: Product short-desc not found for {uri}")
+        # if not short_desc: print(f"### Warning: Product short-desc not found for {uri}")
         desc = desc.text if desc else ""
         short_desc = short_desc.text if short_desc else ""
 
@@ -89,13 +89,10 @@ class Scanner(object):
         soup = BeautifulSoup(content, "html.parser")
         
         product_sections = soup.find_all(class_="product-thumnail")
-        plist=[]
         for section in product_sections:
             anchor = section.find(class_="product-name-collection").a
             name = anchor.text
             link = anchor.get('href')
             price_str = section.find(class_="product-price").div.span.text
             p = Product(name, link, price_str)
-            # yield p
-            plist.append(p)
-        return plist
+            yield p
