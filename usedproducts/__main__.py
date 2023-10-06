@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import argparse
-import json
+import time
 from multiprocessing import Process
 import multiprocessing
 import os
@@ -8,6 +8,7 @@ import urllib3
 import logging
 import sys
 import pymongo
+import psutil
 
 from lib.scanner import Scanner
 from lib.product import Product, productFromMongo
@@ -22,8 +23,9 @@ def crawl(num_pages, scanner: Scanner):
         try:
             for product in scanner.scan(page_uri):
                 yield product
-        except:
-            print(f"### Error: Failed loading summary page {i}: {page_uri}")
+        except Exception as e:
+            print(f"### Error: Failed loading summary page {i}: {page_uri} with error {str(e)}")
+            scanner = Scanner()
 
 def crawl_details(q_incoming: multiprocessing.Queue, q_outgoing: multiprocessing.Queue):
     scanner = Scanner()
@@ -36,8 +38,9 @@ def crawl_details(q_incoming: multiprocessing.Queue, q_outgoing: multiprocessing
                 product.desc, product.short_desc = scanner.scan_details(product.link)
                 product.fill_derived()
                 q_outgoing.put(product)
-            except:
-                print(f"### Error: Failed loading product {product.name}")
+            except Exception as e:
+                scanner = Scanner()
+                print(f"### Error: Failed loading product {product.link} with error {str(e)}")
         if type(incoming) is str:
             print("Exiting crawler process")
             return
@@ -89,22 +92,30 @@ def main():
         num_pages = get_num_pages(args, scanner=main_scanner)
 
         ctx = multiprocessing.get_context('spawn')
-        q_crawl = ctx.Queue()
+        q_crawl = ctx.Queue(maxsize=100)
         q_save = ctx.Queue()
         save_process = Process(target=save_product, args=(q_save,))
         save_process.start()
-        processes = [Process(target=crawl_details, args=(q_crawl,q_save,)) for i in range(12)]
+        processes = [Process(target=crawl_details, args=(q_crawl,q_save,)) for i in range(8)]
         for process in processes:
             process.start()
 
+        active_processes = len(processes)
 
-        count = 0
         for product in crawl(num_pages, scanner=main_scanner):
             print(f"Putting product: {product.name}")
-            count += 1
+            while q_crawl.full():
+                print("Going for a break ...")
+                time.sleep(2.0)
+            if psutil.virtual_memory().percent > 80:
+                print("#### MEMORY WARNING #####")
+                if active_processes > 1:
+                    active_processes -= 1
+                    q_crawl.put("finish")
+
             q_crawl.put(product)
 
-        for process in processes:
+        for process in range(active_processes):
             q_crawl.put("finish")
         for process in processes:
             process.join()
