@@ -16,10 +16,13 @@ from lib.product import Product, productFromMongo
 # enable only after pip install -U memory_profiler
 # from memory_profiler import profile
 
-def crawl(num_pages, scanner: Scanner):
+def crawl(num_pages):
+    scanner = Scanner()
     for i in range(1, num_pages + 1):
         page_uri = f"https://www.usedproducts.nl/page/{i}/?s&post_type=product&vestiging=0"
-        print(f"Loading summary page {i}: {page_uri}")
+        if i % 50 == 0:
+            scanner = Scanner()
+        # print(f"Loading summary page {i}")
         try:
             for product in scanner.scan(page_uri):
                 yield product
@@ -29,11 +32,15 @@ def crawl(num_pages, scanner: Scanner):
 
 def crawl_details(q_incoming: multiprocessing.Queue, q_outgoing: multiprocessing.Queue):
     scanner = Scanner()
+    count = 0
     while(True):
         incoming = q_incoming.get()
+        count += 1
+        if count % 50 == 0:
+            scanner = Scanner()
         if type(incoming) is Product:
             product = incoming
-            print(f"Loading product: {product.name}")
+            # print(f"Loading product: {product.name}")
             try:
                 product.desc, product.short_desc = scanner.scan_details(product.link)
                 product.fill_derived()
@@ -52,7 +59,7 @@ def save_product(q_incoming: multiprocessing.Queue):
     while(True):
         incoming = q_incoming.get()
         if type(incoming) is Product:
-            print(f"Saving product {incoming.name}")
+            # print(f"Saving product {incoming.name}")
             save_to_mongo(incoming, coll)
         if type(incoming) is str:
             print("Exiting save process")
@@ -88,25 +95,25 @@ def main():
         coll.delete_many({ })
 
     if args.crawl or args.empty:
-        main_scanner = Scanner()
-        num_pages = get_num_pages(args, scanner=main_scanner)
+        page_scanner = Scanner()
+        num_pages = get_num_pages(args, scanner=page_scanner)
 
         ctx = multiprocessing.get_context('spawn')
         q_crawl = ctx.Queue(maxsize=100)
         q_save = ctx.Queue()
         save_process = Process(target=save_product, args=(q_save,))
         save_process.start()
-        processes = [Process(target=crawl_details, args=(q_crawl,q_save,)) for i in range(8)]
+        processes = [Process(target=crawl_details, args=(q_crawl,q_save,)) for i in range(6)]
         for process in processes:
             process.start()
 
         active_processes = len(processes)
 
-        for product in crawl(num_pages, scanner=main_scanner):
-            print(f"Putting product: {product.name}")
+        for product in crawl(num_pages):
+            # print(f"Putting product: {product.name}")
             while q_crawl.full():
-                print("Going for a break ...")
-                time.sleep(2.0)
+                print(f"Going for a break ... mem: {psutil.virtual_memory().percent}")
+                time.sleep(4.0)
             if psutil.virtual_memory().percent > 80:
                 print("#### MEMORY WARNING #####")
                 if active_processes > 1:
