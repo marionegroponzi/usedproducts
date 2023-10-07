@@ -138,9 +138,7 @@ def parse_args():
 
 
 def config_env():
-    # some pages are self-signed by ABN AMRO, and we don't want to see all the warnings about those
     urllib3.disable_warnings()
-
     os.environ['PATH'] = f"{os.environ['PATH']}:{os.getcwd()}"
 
 
