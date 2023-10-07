@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import argparse
 import time
-from multiprocessing import Process
+
 import multiprocessing
 import os
 import urllib3
@@ -12,6 +12,7 @@ import psutil
 
 from lib.scanner import Scanner
 from lib.product import Product, productFromMongo
+from lib.process_manager import ProcessManager
 
 # enable only after pip install -U memory_profiler
 # from memory_profiler import profile
@@ -51,8 +52,6 @@ def crawl_details(q_incoming: multiprocessing.Queue, q_outgoing: multiprocessing
         if type(incoming) is str:
             print("Exiting crawler process")
             return
-    
-    # return product
 
 def save_product(q_incoming: multiprocessing.Queue):
     coll = get_mongo()
@@ -93,39 +92,16 @@ def main():
         coll.delete_many({ })
 
     if args.crawl or args.empty:
-
         num_pages = get_num_pages(args)
-
-        ctx = multiprocessing.get_context('spawn')
-        queue_crawl = ctx.Queue(maxsize=100)
-        queue_save = ctx.Queue()
-        save_process = Process(target=save_product, args=(queue_save,))
-        save_process.start()
-        processes = [Process(target=crawl_details, args=(queue_crawl,queue_save,)) for i in range(8)]
-        for process in processes:
-            process.start()
-
-        active_processes = len(processes)
+        pm = ProcessManager(save_fn=save_product, crawl_fn=crawl_details)
+        pm.start()
 
         for product in crawl(num_pages):
             # print(f"Putting product: {product.name}")
-            while queue_crawl.full():
-                print(f"Taking a break ... mem: {psutil.virtual_memory().percent}")
-                time.sleep(4.0)
-            if psutil.virtual_memory().percent > 80:
-                print("#### MEMORY WARNING #####")
-                if active_processes > 1:
-                    active_processes -= 1
-                    queue_crawl.put("finish")
+            pm.check_status()
+            pm.queue_crawl.put(product)
 
-            queue_crawl.put(product)
-
-        for process in range(active_processes):
-            queue_crawl.put("finish")
-        for process in processes:
-            process.join()
-        queue_save.put("finish")
-        save_process.join()
+        pm.stop()
     else: 
         if args.refresh:
             for mongo_product in coll.find():
