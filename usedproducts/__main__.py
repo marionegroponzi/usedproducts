@@ -83,10 +83,7 @@ def get_num_pages(args, scanner: Scanner):
 
 # @profile
 def main():
-    (success, args) = parse_args()
-    if not success:
-        print("Something wrong with the arguments")
-        return -1
+    args = parse_args()
     config_env()
 
     coll = get_mongo()
@@ -139,24 +136,28 @@ def main():
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        prog='usedproducts',
-        description='Crawler for userdproducts.com',
-        )
-    parser.add_argument('--log', '-l', choices=['DEBUG','INFO','WARN','ERROR'],
-                        help='loglevel: DEBUG, INFO, WARN, ERROR (default: ERROR)')
+    try:
+        parser = argparse.ArgumentParser(
+            prog='usedproducts',
+            description='Crawler for userdproducts.com',
+            )
+        parser.add_argument('--log', '-l', choices=['DEBUG','INFO','WARN','ERROR'],
+                            help='loglevel: DEBUG, INFO, WARN, ERROR (default: ERROR)')
 
-    parser.add_argument('--max_pages', '-p', type=int, help='maximum number of pages to load', default=sys.maxsize)
-    parser.add_argument('--empty', '-e', action='store_true', help='empty the database before crawling, implies --crawl')
-    parser.add_argument('--crawl', '-c', action='store_true', help='crawl the web')
-    parser.add_argument('--refresh', '-r', action='store_true', help='refresh the database without crawling')
-    args = parser.parse_args()
-    if args.log:
-        numeric_level = getattr(logging, args.log.upper())
-        if not isinstance(numeric_level, int):
-            raise ValueError('Invalid log level: %s' % args.loglevel)
-        logging.basicConfig(level=numeric_level)
-    return (True, args)
+        parser.add_argument('--max_pages', '-p', type=int, help='maximum number of pages to load', default=sys.maxsize)
+        parser.add_argument('--empty', '-e', action='store_true', help='empty the database before crawling, implies --crawl')
+        parser.add_argument('--crawl', '-c', action='store_true', help='crawl the web')
+        parser.add_argument('--refresh', '-r', action='store_true', help='refresh the database without crawling')
+        args = parser.parse_args()
+        if args.log:
+            numeric_level = getattr(logging, args.log.upper())
+            if not isinstance(numeric_level, int):
+                raise ValueError('Invalid log level: %s' % args.loglevel)
+            logging.basicConfig(level=numeric_level)
+        return args
+    except:
+        print("### Error: Something wrong with the arguments")
+        exit(-1)
 
 
 def config_env():
