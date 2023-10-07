@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import argparse
-import time
 
 import multiprocessing
 import os
@@ -8,7 +7,6 @@ import urllib3
 import logging
 import sys
 import pymongo
-import psutil
 
 from lib.scanner import Scanner
 from lib.product import Product, productFromMongo
@@ -17,16 +15,25 @@ from lib.process_manager import ProcessManager
 # enable only after pip install -U memory_profiler
 # from memory_profiler import profile
 
+def already_stored(product: Product):
+    coll = get_mongo()
+    already_stored = coll.find_one({ "link": product.link })
+    return already_stored != None
+
 def crawl(num_pages):
     scanner = Scanner()
+    duplicate_count = 0
     for i in range(1, num_pages + 1):
         page_uri = f"https://www.usedproducts.nl/page/{i}/?s&post_type=product&vestiging=0"
-        if i % 50 == 0:
-            scanner = Scanner()
+        if i % 50 == 0: scanner = Scanner()
         # print(f"Loading summary page {i}")
         try:
             for product in scanner.scan(page_uri):
-                yield product
+                if already_stored(product):
+                    duplicate_count += 1
+                    print(f"already stored {duplicate_count}")
+                else:
+                    yield product
         except Exception as e:
             print(f"### Error: Failed loading summary page {i}: {page_uri} with error {str(e)}")
             scanner = Scanner()
@@ -109,8 +116,6 @@ def main():
                 product = productFromMongo(mongo_product)
                 product.fill_derived()
                 coll.update_one(filter, product.__dict__)
-
-
 
 def parse_args():
     try:
