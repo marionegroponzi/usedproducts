@@ -103,7 +103,7 @@ def main():
         queue_save = ctx.Queue()
         save_process = Process(target=save_product, args=(queue_save,))
         save_process.start()
-        processes = [Process(target=crawl_details, args=(queue_crawl,queue_save,)) for i in range(6)]
+        processes = [Process(target=crawl_details, args=(queue_crawl,queue_save,)) for i in range(8)]
         for process in processes:
             process.start()
 
