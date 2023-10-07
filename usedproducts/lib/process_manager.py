@@ -10,7 +10,7 @@ class ProcessManager(object):
         self.queue_crawl = ctx.Queue(maxsize=100)
         self.queue_save = ctx.Queue()
         self.save_process = Process(target=save_fn, args=(self.queue_save,))
-        self.active_processes = 8
+        self.active_processes = 12
         self.processes = [Process(target=crawl_fn, args=(self.queue_crawl, self.queue_save,)) for i in range(self.active_processes)]
 
 
@@ -30,7 +30,7 @@ class ProcessManager(object):
     def check_status(self):
         while self.queue_crawl.full():
             print(f"Taking a break ... mem: {psutil.virtual_memory().percent}")
-            time.sleep(4.0)
+            time.sleep(8.0)
         if psutil.virtual_memory().percent > 80:
             print("#### MEMORY WARNING #####")
             if active_processes > 1:
