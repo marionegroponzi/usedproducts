@@ -76,7 +76,8 @@ def get_mongo() -> pymongo.collection.Collection:
     coll = client.usedproducts.products
     return coll
 
-def get_num_pages(args, scanner: Scanner):
+def get_num_pages(args):
+    scanner = Scanner()
     num_pages = scanner.get_num_pages("https://www.usedproducts.nl/page/1/?s&post_type=product&vestiging=0")
     scanner.accept_cookies()
     return min(num_pages, args.max_pages)
@@ -92,8 +93,8 @@ def main():
         coll.delete_many({ })
 
     if args.crawl or args.empty:
-        page_scanner = Scanner()
-        num_pages = get_num_pages(args, scanner=page_scanner)
+
+        num_pages = get_num_pages(args)
 
         ctx = multiprocessing.get_context('spawn')
         queue_crawl = ctx.Queue(maxsize=100)
