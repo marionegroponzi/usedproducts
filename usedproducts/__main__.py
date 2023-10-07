@@ -112,7 +112,7 @@ def main():
         for product in crawl(num_pages):
             # print(f"Putting product: {product.name}")
             while queue_crawl.full():
-                print(f"Going for a break ... mem: {psutil.virtual_memory().percent}")
+                print(f"Taking a break ... mem: {psutil.virtual_memory().percent}")
                 time.sleep(4.0)
             if psutil.virtual_memory().percent > 80:
                 print("#### MEMORY WARNING #####")
