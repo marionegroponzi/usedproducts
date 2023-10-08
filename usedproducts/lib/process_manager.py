@@ -27,7 +27,7 @@ class ProcessManager(object):
         self.queue_save.put("finish")
         self.save_process.join()
 
-    def check_status(self):
+    def check_system_status(self):
         while self.queue_crawl.full():
             print(f"Taking a break ... mem: {psutil.virtual_memory().percent}")
             time.sleep(8.0)
