@@ -15,6 +15,10 @@ from lib.process_manager import ProcessManager
 # enable only after pip install -U memory_profiler
 # from memory_profiler import profile
 
+def update_modified_date(product: Product):
+    coll = get_mongo()
+    coll.update_one({"link": product.link},{"$set": {"modified_date": product.modified }})
+
 def already_stored(product: Product):
     coll = get_mongo()
     already_stored = coll.find_one({ "link": product.link })
@@ -22,18 +26,13 @@ def already_stored(product: Product):
 
 def crawl(num_pages):
     scanner = Scanner()
-    duplicate_count = 0
     for i in range(1, num_pages + 1):
         page_uri = f"https://www.usedproducts.nl/page/{i}/?s&post_type=product&vestiging=0"
         if i % 50 == 0: scanner = Scanner()
         # print(f"Loading summary page {i}")
         try:
             for product in scanner.scan(page_uri):
-                if already_stored(product):
-                    duplicate_count += 1
-                    print(f"already stored {duplicate_count}")
-                else:
-                    yield product
+                yield product
         except Exception as e:
             print(f"### Error: Failed loading summary page {i}: {page_uri} with error {str(e)}")
             scanner = Scanner()
@@ -52,6 +51,8 @@ def crawl_details(q_incoming: multiprocessing.Queue, q_outgoing: multiprocessing
             try:
                 product.desc, product.short_desc = scanner.scan_details(product.link)
                 product.fill_derived()
+                product.set_created_date()
+                product.set_modified_date()
                 q_outgoing.put(product)
             except Exception as e:
                 scanner = Scanner()
@@ -102,11 +103,17 @@ def main():
         num_pages = get_num_pages(args)
         pm = ProcessManager(save_fn=save_product, crawl_fn=crawl_details)
         pm.start()
-
+        duplicate_count = 0
         for product in crawl(num_pages):
             # print(f"Putting product: {product.name}")
-            pm.check_status()
-            pm.queue_crawl.put(product)
+            pm.check_system_status()
+            if already_stored(product):
+                duplicate_count += 1
+                print(f"already stored {duplicate_count}")
+                product.set_modified_date()
+                update_modified_date(product=product)
+            else:            
+                pm.queue_crawl.put(product)
 
         pm.stop()
     else: 

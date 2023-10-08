@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import json
 from typing import Optional
 import re
@@ -39,6 +40,12 @@ class Product(object):
 
         price = re.sub(",", ".", price)
         self.price_num = float(price)
+
+    def set_created_date(self):
+        self.created = str(datetime.now(timezone.utc))
+
+    def set_modified_date(self):
+        self.modified = str(datetime.now(timezone.utc))
 
     def fill_clean_details(self):
         d = re.sub("\n", " ", self.desc)
