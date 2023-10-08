@@ -54,10 +54,13 @@
 
 
 #### mongo db
-# import pymongo
-# client = pymongo.MongoClient("mongodb://localhost:27017/")
+from datetime import datetime, timezone
+import pymongo
+client = pymongo.MongoClient("mongodb://localhost:27017/")
 
-# coll = client.usedproducts.products
+coll = client.usedproducts.products
+p = coll.find_one({"link": "https://www.usedproductssittard.nl/iphone-13-128gb-midnight-in-zeer-goede-staat-accu.html"})
+coll.update_one({"link": "https://www.usedproductssittard.nl/iphone-13-128gb-midnight-in-zeer-goede-staat-accu.html"},{"$set": {"modified_date": str(datetime.now(timezone.utc))}})
 # for product in coll.find().limit(500):
 #     print(product["_id"])
 
@@ -141,5 +144,5 @@
 #     #     print(list(p.map(lambda x, y: x + y, [1,2,3], [4,5,6])))
 
 
-import psutil
-print(psutil.virtual_memory().percent)
+# import psutil
+# print(psutil.virtual_memory().percent)
