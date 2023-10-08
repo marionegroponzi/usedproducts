@@ -15,9 +15,9 @@ from lib.process_manager import ProcessManager
 # enable only after pip install -U memory_profiler
 # from memory_profiler import profile
 
-def update_modified_date(product: Product):
+def update_verified_date(product: Product):
     coll = get_mongo()
-    coll.update_one({"link": product.link},{"$set": {"modified_date": product.modified }})
+    coll.update_one({"link": product.link},{"$set": {"verified": product.verified }})
 
 def already_stored(product: Product):
     coll = get_mongo()
@@ -52,7 +52,7 @@ def crawl_details(q_incoming: multiprocessing.Queue, q_outgoing: multiprocessing
                 product.desc, product.short_desc = scanner.scan_details(product.link)
                 product.fill_derived()
                 product.set_created_date()
-                product.set_modified_date()
+                product.set_verified_date()
                 q_outgoing.put(product)
             except Exception as e:
                 scanner = Scanner()
@@ -110,8 +110,8 @@ def main():
             if already_stored(product):
                 duplicate_count += 1
                 print(f"already stored {duplicate_count}")
-                product.set_modified_date()
-                update_modified_date(product=product)
+                product.set_verified_date()
+                update_verified_date(product=product)
             else:            
                 pm.queue_crawl.put(product)
 

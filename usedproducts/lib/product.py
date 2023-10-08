@@ -22,6 +22,8 @@ class Product(object):
     battery_level: int = -1
     has_apple_garantie: bool = False
     price_num: float = 0.0
+    created: str = ""
+    verified: str = ""
 
     def fill_derived(self):
         self.fill_price_num()
@@ -44,8 +46,8 @@ class Product(object):
     def set_created_date(self):
         self.created = str(datetime.now(timezone.utc))
 
-    def set_modified_date(self):
-        self.modified = str(datetime.now(timezone.utc))
+    def set_verified_date(self):
+        self.verified = str(datetime.now(timezone.utc))
 
     def fill_clean_details(self):
         d = re.sub("\n", " ", self.desc)
