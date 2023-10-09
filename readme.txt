@@ -5,6 +5,13 @@ Scan [usedproducts.nl](usedproducts.nl) and collect all products in a local mong
 
 Longer term the idea is to make some analysis, price trends and maybe notifications when sepcific products become cheap.
 
+### venv
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python main.py
+deactivate
+
 ### Notes
 See mongodump and mongorestore to backup the db
 E.g.:
