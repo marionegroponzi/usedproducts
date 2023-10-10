@@ -3,6 +3,7 @@ import argparse
 
 import multiprocessing
 import os
+from time import sleep
 import urllib3
 import logging
 import sys
@@ -24,28 +25,33 @@ def already_stored(product: Product):
     already_stored = coll.find_one({ "link": product.link })
     return already_stored != None
 
-def crawl(q_incoming: multiprocessing.Queue, q_outgoing: multiprocessing.Queue):
+def crawl(q_incoming: multiprocessing.Queue, q_outgoing: multiprocessing.Queue, num_pages, q_stop: multiprocessing.Queue):
     scanner = Scanner()
     count = 0
     while(True):
         incoming = q_incoming.get()
+        print(f"incoming crawl: {incoming}")
         if type(incoming) is int:
             count += 1
             if count % 50 == 0: scanner = Scanner()
             index = incoming            
             page_uri = f"https://www.usedproducts.nl/page/{index}/?s&post_type=product&vestiging=0"
-            # print(f"Loading summary page {i}")
+            print(f"Loading summary page {incoming}")
             try:
                 for product in scanner.scan(page_uri):
                     if already_stored(product):
                         print(f"already stored {product.name}")
                         product.set_verified_date()
                         update_verified_date(product=product)
-                    else:            
+                    else:
+                        print(f"putting out {index}")
                         q_outgoing.put(product)
             except Exception as e:
                 print(f"### Error: Failed loading summary page {index}: {page_uri} with error {str(e)}")
                 scanner = Scanner()
+            if index == num_pages - 1:
+                print("Putting an end to this suffering")
+                q_stop.put("Finish")
         if type(incoming) is str:
             print("Exiting page crawler process")
             return
@@ -56,6 +62,7 @@ def crawl_details(q_incoming: multiprocessing.Queue, q_outgoing: multiprocessing
     while(True):
         incoming = q_incoming.get()
         if type(incoming) is Product:
+            print(f"incoming details: {incoming.name}")
             count += 1
             if count % 50 == 0: scanner = Scanner()            
             product = incoming
@@ -112,21 +119,12 @@ def main():
 
     if args.crawl or args.empty:
         num_pages = get_num_pages(args)
-        pm = ProcessManager(crawl_page_fn=crawl, save_fn=save_product, crawl_details_fn=crawl_details, num_pages=num_pages)
+        ctx = multiprocessing.get_context('spawn')
+        queue_stop = ctx.Queue()
+        pm = ProcessManager(crawl_page_fn=crawl, save_fn=save_product, crawl_details_fn=crawl_details, num_pages=num_pages, q_stop=queue_stop)
         pm.start()
-
-        # duplicate_count = 0
-        # for product in crawl(num_pages):
-        #     # print(f"Putting product: {product.name}")
-        #     pm.check_system_status()
-        #     if already_stored(product):
-        #         duplicate_count += 1
-        #         print(f"already stored {duplicate_count}")
-        #         product.set_verified_date()
-        #         update_verified_date(product=product)
-        #     else:            
-        #         pm.queue_crawl_details.put(product)
-
+        value=queue_stop.get()
+        print(value)
         pm.stop()
     else: 
         if args.refresh:
