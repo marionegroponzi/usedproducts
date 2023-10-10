@@ -24,28 +24,40 @@ def already_stored(product: Product):
     already_stored = coll.find_one({ "link": product.link })
     return already_stored != None
 
-def crawl(num_pages):
+def crawl(q_incoming: multiprocessing.Queue, q_outgoing: multiprocessing.Queue):
     scanner = Scanner()
-    for i in range(1, num_pages + 1):
-        page_uri = f"https://www.usedproducts.nl/page/{i}/?s&post_type=product&vestiging=0"
-        if i % 50 == 0: scanner = Scanner()
-        # print(f"Loading summary page {i}")
-        try:
-            for product in scanner.scan(page_uri):
-                yield product
-        except Exception as e:
-            print(f"### Error: Failed loading summary page {i}: {page_uri} with error {str(e)}")
-            scanner = Scanner()
+    count = 0
+    while(True):
+        incoming = q_incoming.get()
+        if type(incoming) is int:
+            count += 1
+            if count % 50 == 0: scanner = Scanner()
+            index = incoming            
+            page_uri = f"https://www.usedproducts.nl/page/{index}/?s&post_type=product&vestiging=0"
+            # print(f"Loading summary page {i}")
+            try:
+                for product in scanner.scan(page_uri):
+                    if already_stored(product):
+                        print(f"already stored {product.name}")
+                        product.set_verified_date()
+                        update_verified_date(product=product)
+                    else:            
+                        q_outgoing.put(product)
+            except Exception as e:
+                print(f"### Error: Failed loading summary page {index}: {page_uri} with error {str(e)}")
+                scanner = Scanner()
+        if type(incoming) is str:
+            print("Exiting page crawler process")
+            return
 
 def crawl_details(q_incoming: multiprocessing.Queue, q_outgoing: multiprocessing.Queue):
     scanner = Scanner()
     count = 0
     while(True):
         incoming = q_incoming.get()
-        count += 1
-        if count % 50 == 0:
-            scanner = Scanner()
         if type(incoming) is Product:
+            count += 1
+            if count % 50 == 0: scanner = Scanner()            
             product = incoming
             # print(f"Loading product: {product.name}")
             try:
@@ -58,7 +70,7 @@ def crawl_details(q_incoming: multiprocessing.Queue, q_outgoing: multiprocessing
                 scanner = Scanner()
                 print(f"### Error: Failed loading product {product.link} with error {str(e)}")
         if type(incoming) is str:
-            print("Exiting crawler process")
+            print("Exiting details crawler process")
             return
 
 def save_product(q_incoming: multiprocessing.Queue):
@@ -96,24 +108,24 @@ def main():
 
     coll = get_mongo()
 
-    if args.empty:
-        coll.delete_many({ })
+    if args.empty: coll.delete_many({ })
 
     if args.crawl or args.empty:
         num_pages = get_num_pages(args)
-        pm = ProcessManager(save_fn=save_product, crawl_fn=crawl_details)
+        pm = ProcessManager(crawl_page_fn=crawl, save_fn=save_product, crawl_details_fn=crawl_details, num_pages=num_pages)
         pm.start()
-        duplicate_count = 0
-        for product in crawl(num_pages):
-            # print(f"Putting product: {product.name}")
-            pm.check_system_status()
-            if already_stored(product):
-                duplicate_count += 1
-                print(f"already stored {duplicate_count}")
-                product.set_verified_date()
-                update_verified_date(product=product)
-            else:            
-                pm.queue_crawl.put(product)
+
+        # duplicate_count = 0
+        # for product in crawl(num_pages):
+        #     # print(f"Putting product: {product.name}")
+        #     pm.check_system_status()
+        #     if already_stored(product):
+        #         duplicate_count += 1
+        #         print(f"already stored {duplicate_count}")
+        #         product.set_verified_date()
+        #         update_verified_date(product=product)
+        #     else:            
+        #         pm.queue_crawl_details.put(product)
 
         pm.stop()
     else: 
