@@ -3,7 +3,6 @@ import argparse
 
 import multiprocessing
 import os
-from time import sleep
 import urllib3
 import logging
 import sys
@@ -16,8 +15,11 @@ from lib.process_manager import ProcessManager
 # enable only after pip install -U memory_profiler
 # from memory_profiler import profile
 
-def update_verified_date(product: Product):
+
+
+def update_product_in_db(product: Product):
     coll = get_mongo()
+    product.set_verified_date()  
     coll.update_one({"link": product.link},{"$set": {"verified": product.verified }})
 
 def already_stored(product: Product):
@@ -40,11 +42,8 @@ def crawl(q_incoming: multiprocessing.Queue, q_outgoing: multiprocessing.Queue, 
             try:
                 for product in scanner.scan(page_uri):
                     if already_stored(product):
-                        print(f"already stored {product.name}")
-                        product.set_verified_date()
-                        update_verified_date(product=product)
+                        update_product_in_db(product)
                     else:
-                        print(f"putting out {index}")
                         q_outgoing.put(product)
             except Exception as e:
                 print(f"### Error: Failed loading summary page {index}: {page_uri} with error {str(e)}")
@@ -68,10 +67,8 @@ def crawl_details(q_incoming: multiprocessing.Queue, q_outgoing: multiprocessing
             product = incoming
             # print(f"Loading product: {product.name}")
             try:
-                product.desc, product.short_desc = scanner.scan_details(product.link)
-                product.fill_derived()
-                product.set_created_date()
-                product.set_verified_date()
+                scanner.add_details(product)
+                product.fill_derived(including_dates=True)
                 q_outgoing.put(product)
             except Exception as e:
                 scanner = Scanner()
