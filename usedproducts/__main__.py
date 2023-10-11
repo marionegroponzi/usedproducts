@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import time
 
 import multiprocessing
 import os
@@ -35,7 +36,10 @@ def crawl(q_incoming: multiprocessing.Queue, q_outgoing: multiprocessing.Queue, 
         if type(incoming) is int:
             print(f"incoming crawl: {incoming}")
             count += 1
-            if count % 50 == 0: scanner = Scanner()
+            if count % 50 == 0: 
+                scanner.close()
+                scanner = Scanner()
+                time.sleep(5.0)
             index = incoming            
             page_uri = f"https://www.usedproducts.nl/page/{index}/?s&post_type=product&vestiging=0"
             # print(f"Loading summary page {incoming}")
@@ -63,7 +67,10 @@ def crawl_details(q_incoming: multiprocessing.Queue, q_outgoing: multiprocessing
         if type(incoming) is Product:
             print(f"incoming details: {incoming.name}")
             count += 1
-            if count % 50 == 0: scanner = Scanner()            
+            if count % 50 == 0: 
+                scanner.close()
+                scanner = Scanner()
+                time.sleep(5.0)
             product = incoming
             # print(f"Loading product: {product.name}")
             try:
@@ -120,8 +127,15 @@ def main():
         queue_stop = ctx.Queue()
         pm = ProcessManager(crawl_page_fn=crawl, save_fn=save_product, crawl_details_fn=crawl_details, num_pages=num_pages, q_stop=queue_stop)
         pm.start()
-        value=queue_stop.get()
-        print(value)
+        value = None
+        while(value != "Finish"):
+            if queue_stop.empty():
+                print("Checking system status")
+                pm.check_system_status()
+                time.sleep(10.0)
+            else:
+                value = queue_stop.get()
+                print(f"Shutting down: {value}")
         pm.stop()
     else: 
         if args.refresh:
