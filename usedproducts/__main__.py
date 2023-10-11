@@ -30,13 +30,13 @@ def crawl(q_incoming: multiprocessing.Queue, q_outgoing: multiprocessing.Queue, 
     count = 0
     while(True):
         incoming = q_incoming.get()
-        print(f"incoming crawl: {incoming}")
         if type(incoming) is int:
+            print(f"incoming crawl: {incoming}")
             count += 1
             if count % 50 == 0: scanner = Scanner()
             index = incoming            
             page_uri = f"https://www.usedproducts.nl/page/{index}/?s&post_type=product&vestiging=0"
-            print(f"Loading summary page {incoming}")
+            # print(f"Loading summary page {incoming}")
             try:
                 for product in scanner.scan(page_uri):
                     if already_stored(product):
