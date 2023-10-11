@@ -59,8 +59,8 @@ class Scanner(object):
         num_pages = math.ceil(int(matches[2]) / int(matches[1]))
         return num_pages
     
-    def scan_details(self, uri):
-        self.browser.get(uri)
+    def add_details(self, product: Product):
+        self.browser.get(product.link)
         wait = WebDriverWait(self.browser, 10)
         wait.until(PageLoaded())
         content = self.browser.page_source
@@ -76,7 +76,8 @@ class Scanner(object):
         desc = re.sub("\s+", " ", desc).strip()
         short_desc = re.sub("\s+", " ", short_desc).strip()
 
-        return (desc, short_desc)
+        product.desc = desc
+        product.short_desc = short_desc
     
     def accept_cookies(self):
         self.browser.find_element(By.ID, "allowcookie").click()

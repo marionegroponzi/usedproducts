@@ -25,7 +25,7 @@ class Product(object):
     created: str = ""
     verified: str = ""
 
-    def fill_derived(self):
+    def fill_derived(self, including_dates: bool = False):
         self.fill_price_num()
         self.fill_clean_details()
         self.fill_is_iphone()
@@ -34,6 +34,9 @@ class Product(object):
         self.fill_model_name()
         self.fill_battery_level()
         self.fill_has_apple_garantie()
+        if including_dates:
+            self.set_created_date()
+            self.set_verified_date()
 
     def fill_price_num(self):
         price = self.price_str
