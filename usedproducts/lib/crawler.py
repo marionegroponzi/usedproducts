@@ -11,16 +11,15 @@ from lib.product import Product
 
 
 class Crawler(object):
-    def __init__(self, args, pm:ProcessManager):
-        self.args = args
-        self.pm = pm
-        self.num_pages = self.get_num_pages(args.max_pages)
+    num_pages: int
+    def __init__(self):
+        self.pm: ProcessManager = None
 
-    def get_num_pages(self, max_pages: int):
+    def get_num_pages(max_pages: int):
         scanner = Scanner()
         num_pages = scanner.get_num_pages("https://www.usedproducts.nl/page/1/?s&post_type=product&vestiging=0")
         scanner.accept_cookies()
-        return min(num_pages, max_pages)  
+        Crawler.num_pages = min(num_pages, max_pages)  
 
     def get_scanner(self, scanner, count) -> Scanner:
         if count % 50 == 0: 
@@ -66,8 +65,7 @@ class Crawler(object):
             if type(incoming) is Product:
                 print(f"incoming details: {incoming.name}")
                 count += 1
-                if count % 50 == 0: 
-                    self.get_scanner(count, scanner)
+                self.get_scanner(count, scanner)
                 product = incoming
                 # print(f"Loading product: {product.name}")
                 try:

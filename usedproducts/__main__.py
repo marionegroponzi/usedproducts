@@ -29,16 +29,16 @@ def main():
     config_env()
     db_manager=DBManager()
     if args.empty: db_manager.clear()
-
+    Crawler.get_num_pages(args.max_pages)
+    
     if args.crawl or args.empty:
-        crawler = Crawler(args)
         ctx = multiprocessing.get_context('spawn')
         queue_stop = ctx.Queue()
-        pm = ProcessManager(crawler=crawler, db_manager=db_manager, q_stop=queue_stop)
+        pm = ProcessManager(q_stop=queue_stop)
         pm.start()
-        value = None
-        while(value != "Finish"):
-            handle_main_process()
+        # value = None
+        # while(value != "Finish"):
+        #     handle_main_process()
         pm.stop()
     else: 
         pass
