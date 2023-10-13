@@ -7,143 +7,50 @@ import os
 import urllib3
 import logging
 import sys
-import pymongo
-
-from lib.scanner import Scanner
-from lib.product import Product, productFromMongo
 from lib.process_manager import ProcessManager
+from lib.crawler import Crawler
+from lib.db_manager import DBManager
 
 # enable only after pip install -U memory_profiler
 # from memory_profiler import profile
 
-
-
-def update_product_in_db(product: Product):
-    coll = get_mongo()
-    product.set_verified_date()  
-    coll.update_one({"link": product.link},{"$set": {"verified": product.verified }})
-
-def already_stored(product: Product):
-    coll = get_mongo()
-    already_stored = coll.find_one({ "link": product.link })
-    return already_stored != None
-
-def crawl(q_incoming: multiprocessing.Queue, q_outgoing: multiprocessing.Queue, num_pages, q_stop: multiprocessing.Queue):
-    scanner = Scanner()
-    count = 0
-    while(True):
-        incoming = q_incoming.get()
-        if type(incoming) is int:
-            print(f"incoming crawl: {incoming}")
-            count += 1
-            if count % 50 == 0: 
-                scanner.close()
-                scanner = Scanner()
-                time.sleep(5.0)
-            index = incoming            
-            page_uri = f"https://www.usedproducts.nl/page/{index}/?s&post_type=product&vestiging=0"
-            # print(f"Loading summary page {incoming}")
-            try:
-                for product in scanner.scan(page_uri):
-                    if already_stored(product):
-                        update_product_in_db(product)
-                    else:
-                        q_outgoing.put(product)
-            except Exception as e:
-                print(f"### Error: Failed loading summary page {index}: {page_uri} with error {str(e)}")
-                scanner = Scanner()
-            if index == num_pages - 1:
-                print("Putting an end to this suffering")
-                q_stop.put("Finish")
-        if type(incoming) is str:
-            print("Exiting page crawler process")
-            return
-
-def crawl_details(q_incoming: multiprocessing.Queue, q_outgoing: multiprocessing.Queue):
-    scanner = Scanner()
-    count = 0
-    while(True):
-        incoming = q_incoming.get()
-        if type(incoming) is Product:
-            print(f"incoming details: {incoming.name}")
-            count += 1
-            if count % 50 == 0: 
-                scanner.close()
-                scanner = Scanner()
-                time.sleep(5.0)
-            product = incoming
-            # print(f"Loading product: {product.name}")
-            try:
-                scanner.add_details(product)
-                product.fill_derived(including_dates=True)
-                q_outgoing.put(product)
-            except Exception as e:
-                scanner = Scanner()
-                print(f"### Error: Failed loading product {product.link} with error {str(e)}")
-        if type(incoming) is str:
-            print("Exiting details crawler process")
-            return
-
-def save_product(q_incoming: multiprocessing.Queue):
-    coll = get_mongo()
-    while(True):
-        incoming = q_incoming.get()
-        if type(incoming) is Product:
-            # print(f"Saving product {incoming.name}")
-            save_to_mongo(incoming, coll)
-        if type(incoming) is str:
-            print("Exiting save process")
-            return
-
-def save_to_mongo(product, collection):
-    if collection is not None:
-        # pay attention that inserting the product modifies it. If you need to return it, copy the dict first
-        d = product.__dict__
-        collection.insert_one(d)
-
-def get_mongo() -> pymongo.collection.Collection:
-    client = pymongo.MongoClient("mongodb://localhost:27017/")
-    coll = client.usedproducts.products
-    return coll
-
-def get_num_pages(args):
-    scanner = Scanner()
-    num_pages = scanner.get_num_pages("https://www.usedproducts.nl/page/1/?s&post_type=product&vestiging=0")
-    scanner.accept_cookies()
-    return min(num_pages, args.max_pages)
+def handle_main_process(pm:ProcessManager, queue_stop:multiprocessing.Queue):
+    value = None
+    if queue_stop.empty():
+        print("Checking system status")
+        pm.check_system_status()
+        time.sleep(10.0)
+    else:
+        value = queue_stop.get()
+        print(f"Shutting down: {value}")
+    return value
 
 # @profile
 def main():
     args = parse_args()
     config_env()
+    db_manager=DBManager()
+    if args.empty: db_manager.clear()
 
-    coll = get_mongo()
-
-    if args.empty: coll.delete_many({ })
-
+    num_pages = Crawler.get_num_pages(args.max_pages)
+    
     if args.crawl or args.empty:
-        num_pages = get_num_pages(args)
         ctx = multiprocessing.get_context('spawn')
         queue_stop = ctx.Queue()
-        pm = ProcessManager(crawl_page_fn=crawl, save_fn=save_product, crawl_details_fn=crawl_details, num_pages=num_pages, q_stop=queue_stop)
+        pm = ProcessManager(q_stop=queue_stop, num_pages=num_pages)
         pm.start()
         value = None
         while(value != "Finish"):
-            if queue_stop.empty():
-                print("Checking system status")
-                pm.check_system_status()
-                time.sleep(10.0)
-            else:
-                value = queue_stop.get()
-                print(f"Shutting down: {value}")
+            value = handle_main_process(pm=pm, queue_stop=queue_stop)
         pm.stop()
     else: 
-        if args.refresh:
-            for mongo_product in coll.find():
-                filter = { 'id': mongo_product._id }
-                product = productFromMongo(mongo_product)
-                product.fill_derived()
-                coll.update_one(filter, product.__dict__)
+        pass
+        # if args.refresh:
+        #     for mongo_product in coll.find():
+        #         filter = { 'id': mongo_product._id }
+        #         product = productFromMongo(mongo_product)
+        #         product.fill_derived()
+        #         coll.update_one(filter, product.__dict__)
 
 def parse_args():
     try:
