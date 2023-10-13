@@ -1,7 +1,12 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from lib.process_manager import ProcessManager
+
 from datetime import time
 import multiprocessing
 from lib.scanner import Scanner
-from lib.process_manager import ProcessManager
 from lib.product import Product
 
 

@@ -7,19 +7,12 @@ import os
 import urllib3
 import logging
 import sys
-import pymongo
-
-from lib.scanner import Scanner
-from lib.product import Product, productFromMongo
 from lib.process_manager import ProcessManager
 from lib.crawler import Crawler
 from lib.db_manager import DBManager
 
 # enable only after pip install -U memory_profiler
 # from memory_profiler import profile
-
-
-
 
 def handle_main_process(pm:ProcessManager, queue_stop:multiprocessing.Queue):
     if queue_stop.empty():
@@ -42,7 +35,6 @@ def main():
         ctx = multiprocessing.get_context('spawn')
         queue_stop = ctx.Queue()
         pm = ProcessManager(crawler=crawler, db_manager=db_manager, q_stop=queue_stop)
-        # pm = ProcessManager(crawl_page_fn=crawl, save_fn=save_product, crawl_details_fn=crawl_details, num_pages=num_pages, q_stop=queue_stop)
         pm.start()
         value = None
         while(value != "Finish"):
