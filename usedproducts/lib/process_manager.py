@@ -1,44 +1,51 @@
-from __future__ import annotations
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from lib.db_manager import DBManager
-
+from lib.db_manager import DBManager
 import multiprocessing
 from multiprocessing import Process
 import psutil
 from lib.crawler import Crawler
 
+def dbsave(q_save: multiprocessing.Queue):
+    db_manager = DBManager()
+    db_manager.save_product(q_save)
+
+def crawldetails(queue_crawl_details: multiprocessing.Queue, queue_save: multiprocessing.Queue):
+    crawler = Crawler()
+    crawler.crawl_details(queue_crawl_details, queue_save)
+
+def crawlpage(queue_crawl_pages: multiprocessing.Queue, queue_crawl_details: multiprocessing.Queue, q_stop: multiprocessing.Queue):
+    crawler = Crawler()
+    crawler.crawl(queue_crawl_pages, queue_crawl_details, q_stop)
+
 class ProcessManager(object):
-    def __init__(self, crawler:Crawler, db_manager:DBManager, q_stop):
+    def __init__(self, q_stop):
         ctx = multiprocessing.get_context('spawn')
-        self.num_pages = crawler.num_pages
         self.queue_crawl_pages = ctx.Queue()
         self.queue_crawl_details = ctx.Queue(maxsize=200)
         self.queue_save = ctx.Queue()
-        self.save_process = Process(target=db_manager.save_fn, args=(self.queue_save,))
+        self.save_process = Process(target=dbsave, args=(self.queue_save,))
         self.active_crawl_pages_processes = 12
         self.active_crawl_details_processes = 12
-        self.crawl_details_processes = [Process(target=crawler.crawl_details, args=(self.queue_crawl_details, self.queue_save,)) for _ in range(self.active_crawl_details_processes)]
-        self.crawl_pages_processes = [Process(target=crawler.crawl, args=(self.queue_crawl_pages, self.queue_crawl_details, crawler.num_pages, q_stop, )) for _ in range(self.active_crawl_pages_processes)]
+        self.crawl_details_processes = [Process(target=crawldetails, args=(self.queue_crawl_details, self.queue_save,)) for _ in range(self.active_crawl_details_processes)]
+        self.crawl_pages_processes = [Process(target=crawlpage, args=(self.queue_crawl_pages, self.queue_crawl_details, q_stop, )) for _ in range(self.active_crawl_pages_processes)]
+        # crawler.pm = self
 
     def start(self):
-        for process in self.crawl_pages_processes:
-            process.start()
+        # for process in self.crawl_pages_processes:
+        #     process.start()
         self.save_process.start()
-        for process in self.crawl_details_processes:
-            process.start()
-        for i in range(self.num_pages): self.queue_crawl_pages.put(i)
+        # for process in self.crawl_details_processes:
+        #     process.start()
+        # for i in range(self.num_pages): self.queue_crawl_pages.put(i)
         
     def stop(self):
-        for process in range(self.active_crawl_pages_processes):
-            self.queue_crawl_pages.put("finish")   
-        for process in self.crawl_pages_processes:
-            process.join()
-        for process in range(self.active_crawl_details_processes):
-            self.queue_crawl_details.put("finish")               
-        for process in self.crawl_details_processes:
-            process.join() 
+        # for process in range(self.active_crawl_pages_processes):
+        #     self.queue_crawl_pages.put("finish")   
+        # for process in self.crawl_pages_processes:
+        #     process.join()
+        # for process in range(self.active_crawl_details_processes):
+        #     self.queue_crawl_details.put("finish")               
+        # for process in self.crawl_details_processes:
+        #     process.join() 
         self.queue_save.put("finish")      
         self.save_process.join()
 
