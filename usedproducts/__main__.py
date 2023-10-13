@@ -15,6 +15,7 @@ from lib.db_manager import DBManager
 # from memory_profiler import profile
 
 def handle_main_process(pm:ProcessManager, queue_stop:multiprocessing.Queue):
+    value = None
     if queue_stop.empty():
         print("Checking system status")
         pm.check_system_status()
@@ -22,6 +23,7 @@ def handle_main_process(pm:ProcessManager, queue_stop:multiprocessing.Queue):
     else:
         value = queue_stop.get()
         print(f"Shutting down: {value}")
+    return value
 
 # @profile
 def main():
@@ -29,16 +31,17 @@ def main():
     config_env()
     db_manager=DBManager()
     if args.empty: db_manager.clear()
-    Crawler.get_num_pages(args.max_pages)
+
+    num_pages = Crawler.get_num_pages(args.max_pages)
     
     if args.crawl or args.empty:
         ctx = multiprocessing.get_context('spawn')
         queue_stop = ctx.Queue()
-        pm = ProcessManager(q_stop=queue_stop)
+        pm = ProcessManager(q_stop=queue_stop, num_pages=num_pages)
         pm.start()
-        # value = None
-        # while(value != "Finish"):
-        #     handle_main_process()
+        value = None
+        while(value != "Finish"):
+            value = handle_main_process(pm=pm, queue_stop=queue_stop)
         pm.stop()
     else: 
         pass

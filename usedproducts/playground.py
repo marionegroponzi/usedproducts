@@ -146,3 +146,13 @@ coll.update_one({"link": "https://www.usedproductssittard.nl/iphone-13-128gb-mid
 
 # import psutil
 # print(psutil.virtual_memory().percent)
+
+class StaticTest(object):
+    num: int
+    def __init__(self):
+        print(f"init {StaticTest.num}")
+
+s=StaticTest()
+StaticTest.num=4
+print(StaticTest.num)
+print(s.num)

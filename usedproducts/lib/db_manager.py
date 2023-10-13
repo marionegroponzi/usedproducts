@@ -33,7 +33,7 @@ class DBManager(object):
             incoming = q_incoming.get()
             if type(incoming) is Product:
                 # print(f"Saving product {incoming.name}")
-                self.save_to_mongo(self, incoming, self.coll)
+                self.save_to_mongo(incoming)
             if type(incoming) is str:
                 print("Exiting save process")
                 return
