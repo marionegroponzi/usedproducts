@@ -27,25 +27,24 @@ class ProcessManager(object):
         self.active_crawl_details_processes = 12
         self.crawl_details_processes = [Process(target=crawldetails, args=(self.queue_crawl_details, self.queue_save,)) for _ in range(self.active_crawl_details_processes)]
         self.crawl_pages_processes = [Process(target=crawlpage, args=(self.queue_crawl_pages, self.queue_crawl_details, q_stop, )) for _ in range(self.active_crawl_pages_processes)]
-        # crawler.pm = self
 
     def start(self):
-        # for process in self.crawl_pages_processes:
-        #     process.start()
+        for process in self.crawl_pages_processes:
+            process.start()
         self.save_process.start()
-        # for process in self.crawl_details_processes:
-        #     process.start()
+        for process in self.crawl_details_processes:
+            process.start()
         # for i in range(self.num_pages): self.queue_crawl_pages.put(i)
         
     def stop(self):
-        # for process in range(self.active_crawl_pages_processes):
-        #     self.queue_crawl_pages.put("finish")   
-        # for process in self.crawl_pages_processes:
-        #     process.join()
-        # for process in range(self.active_crawl_details_processes):
-        #     self.queue_crawl_details.put("finish")               
-        # for process in self.crawl_details_processes:
-        #     process.join() 
+        for process in range(self.active_crawl_pages_processes):
+            self.queue_crawl_pages.put("finish")   
+        for process in self.crawl_pages_processes:
+            process.join()
+        for process in range(self.active_crawl_details_processes):
+            self.queue_crawl_details.put("finish")               
+        for process in self.crawl_details_processes:
+            process.join() 
         self.queue_save.put("finish")      
         self.save_process.join()
 
