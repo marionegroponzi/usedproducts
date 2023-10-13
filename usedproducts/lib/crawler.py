@@ -1,19 +1,15 @@
-from __future__ import annotations
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from lib.process_manager import ProcessManager
 
 from datetime import time
 import multiprocessing
 from lib.scanner import Scanner
 from lib.product import Product
+from lib.db_manager import DBManager
 
 
 class Crawler(object):
     num_pages: int
     def __init__(self):
-        self.pm: ProcessManager = None
+        pass
 
     def get_num_pages(max_pages: int):
         scanner = Scanner()
@@ -30,6 +26,7 @@ class Crawler(object):
 
     def crawl(self, q_incoming: multiprocessing.Queue, q_outgoing: multiprocessing.Queue, q_stop: multiprocessing.Queue):
         scanner = Scanner()
+        db_manager = DBManager()
         count = 0
         while(True):
             incoming = q_incoming.get()
@@ -43,8 +40,8 @@ class Crawler(object):
                 # print(f"Loading summary page {incoming}")
                 try:
                     for product in scanner.scan(page_uri):
-                        if self.pm.already_stored(product):
-                            self.pm.update_product_in_db(product)
+                        if db_manager.already_stored(product):
+                            db_manager.update_product_in_db(product)
                         else:
                             q_outgoing.put(product)
                 except Exception as e:
