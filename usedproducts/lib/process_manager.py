@@ -1,14 +1,15 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from lib.db_manager import DBManager
+
 import multiprocessing
 from multiprocessing import Process
-import time
-
 import psutil
-
 from lib.crawler import Crawler
-from lib.db_manager import DBManager
 
 class ProcessManager(object):
-    # def __init__(self, save_fn, crawl_page_fn, crawl_details_fn, num_pages: int, q_stop):
     def __init__(self, crawler:Crawler, db_manager:DBManager, q_stop):
         ctx = multiprocessing.get_context('spawn')
         self.num_pages = crawler.num_pages
@@ -29,7 +30,6 @@ class ProcessManager(object):
             process.start()
         for i in range(self.num_pages): self.queue_crawl_pages.put(i)
         
-
     def stop(self):
         for process in range(self.active_crawl_pages_processes):
             self.queue_crawl_pages.put("finish")   

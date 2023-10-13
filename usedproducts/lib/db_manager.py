@@ -5,7 +5,7 @@ from lib.product import Product
 
 class DBManager(object):
     def __init__(self):
-        self.coll = self.get_mongo()
+        self.coll = DBManager.get_mongo()
 
     def update_product_in_db(self, product: Product):
         product.set_verified_date()  
