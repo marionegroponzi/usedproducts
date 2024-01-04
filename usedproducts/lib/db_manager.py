@@ -37,3 +37,11 @@ class DBManager(object):
             if type(incoming) is str:
                 print("Exiting save process")
                 return
+
+    def refresh(self):
+        for mongo_product in self.coll.find({}):
+            product_id = { 'id': mongo_product['_id'] }
+            product = Product.product_from_mongo(mongo_product)
+            product.fill_derived()
+            print("a")
+            self.coll.update_one(product_id, product.__dict__)
