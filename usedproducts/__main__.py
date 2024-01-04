@@ -30,6 +30,10 @@ def main():
     args = parse_args()
     config_env()
     db_manager=DBManager()
+    if args.refresh:
+            DBManager().refresh()
+            return
+    
     if args.empty: db_manager.clear()
 
     num_pages = Crawler.get_num_pages(args.max_pages)
@@ -43,14 +47,6 @@ def main():
         while(value != "Finish"):
             value = handle_main_process(pm=pm, queue_stop=queue_stop)
         pm.stop()
-    else: 
-        pass
-        # if args.refresh:
-        #     for mongo_product in coll.find():
-        #         filter = { 'id': mongo_product._id }
-        #         product = productFromMongo(mongo_product)
-        #         product.fill_derived()
-        #         coll.update_one(filter, product.__dict__)
 
 def parse_args():
     try:
