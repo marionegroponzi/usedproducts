@@ -16,7 +16,7 @@ outcome==1.2.0
 packaging==23.1
 pip-upgrader==1.4.15
 psutil==5.9.5
-pymongo==4.5.0
+pymongo==4.6.3
 PySocks==1.7.1
 python-dotenv==1.0.0
 requests==2.31.0
